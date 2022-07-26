@@ -115,6 +115,9 @@ public class LimboReconnect {
     private void startTask() {
         if (this.limboTask != null) this.limboTask.cancel();
         this.limboTask = this.getServer().getScheduler().buildTask(this, () -> {
+            if (this.targetServer == null) {
+                this.limboTask.cancel();
+            }
             try {
                 ServerPing serverPing = this.targetServer.ping().get();
                 if (serverPing.getPlayers().isPresent()) {
