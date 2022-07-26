@@ -118,10 +118,7 @@ public class LimboReconnect {
             try {
                 ServerPing serverPing = this.targetServer.ping().get();
                 if (serverPing.getPlayers().isPresent()) {
-                    this.players.forEach(p -> {
-                        p.disconnect(this.targetServer);
-                        this.players.remove(p);
-                    });
+                    this.players.forEach(p -> p.disconnect(this.targetServer));
                 }
             } catch (InterruptedException | ExecutionException e) {
                 this.players.forEach(p -> p.getProxyPlayer().sendMessage(this.offlineServerMessage));
