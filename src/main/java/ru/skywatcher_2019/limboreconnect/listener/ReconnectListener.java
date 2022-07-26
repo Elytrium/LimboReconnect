@@ -37,24 +37,25 @@ public class ReconnectListener {
     public void onLoginLimboRegister(LoginLimboRegisterEvent event) {
         event.setOnKickCallback(kickEvent -> {
             Player player = kickEvent.getPlayer();
-            if (kickEvent.getServerKickReason().isEmpty()) {
-                player.disconnect(Component.text(""));
-                return false;
+            Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
+            String kickMessage;
+
+            if (kickReason instanceof TranslatableComponent) {
+                kickMessage = ((TranslatableComponent) kickReason).key();
+            } else {
+                kickMessage = ((TextComponent) kickReason).content();
             }
-            if (kickEvent.getServerKickReason().get() instanceof TranslatableComponent) {
-                player.disconnect(kickEvent.getServerKickReason().get());
-                return false;
-            }
-            TextComponent kickMessage = (TextComponent) kickEvent.getServerKickReason().get();
+
             if (kickEvent.kickedDuringServerConnect()) {
-                player.disconnect(kickMessage);
+                player.disconnect(kickReason);
                 return false;
             }
-            if (kickMessage.content().contains(Config.IMP.RESTART_MESSAGE)) {
+
+            if (kickMessage.contains(Config.IMP.RESTART_MESSAGE)) {
                 this.plugin.addPlayer(player);
                 return true;
             } else {
-                player.disconnect(kickMessage);
+                player.disconnect(kickReason);
                 return false;
             }
         });

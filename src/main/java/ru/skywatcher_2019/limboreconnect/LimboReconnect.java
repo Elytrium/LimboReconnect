@@ -26,7 +26,6 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import net.elytrium.java.commons.mc.serialization.Serializer;
 import net.elytrium.java.commons.mc.serialization.Serializers;
@@ -47,7 +46,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(
@@ -138,14 +137,14 @@ public class LimboReconnect {
     private void startTask() {
         if (this.limboTask != null) this.limboTask.cancel();
         this.limboTask = this.getServer().getScheduler().buildTask(this, () -> {
+            if (this.players.isEmpty()) return;
             try {
-                ServerPing serverPing = this.targetServer.ping().get();
-                if (serverPing.getPlayers().isPresent()) {
-                    this.players.forEach(p -> p.disconnect(this.targetServer));
-                }
-            } catch (InterruptedException | ExecutionException e) {
+                this.targetServer.ping().join();
+            } catch (CompletionException e) {
                 this.players.forEach(p -> p.getProxyPlayer().sendMessage(this.offlineServerMessage));
+                return;
             }
+            this.players.forEach(p -> p.disconnect(this.targetServer));
         }).repeat(checkInterval, TimeUnit.SECONDS).schedule();
     }
 }
