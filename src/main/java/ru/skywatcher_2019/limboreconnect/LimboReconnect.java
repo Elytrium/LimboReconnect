@@ -9,20 +9,29 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import net.elytrium.java.commons.mc.serialization.Serializer;
+import net.elytrium.java.commons.mc.serialization.Serializers;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
 import net.elytrium.limboapi.api.chunk.VirtualWorld;
 import net.elytrium.limboapi.api.player.LimboPlayer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.ComponentSerializer;
 import org.slf4j.Logger;
 import ru.skywatcher_2019.limboreconnect.handler.ReconnectHandler;
 import ru.skywatcher_2019.limboreconnect.listener.ReconnectListener;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @Plugin(
         id = "limboreconnect",
@@ -38,11 +47,12 @@ public class LimboReconnect {
     private final ProxyServer server;
     private final File configFile;
     private final LimboFactory factory;
+    public HashSet<LimboPlayer> players = new HashSet<>();
     private Limbo limbo;
-    public HashMap<LimboPlayer, RegisteredServer> players = new HashMap<>();
-    private int checkInterval;
+    private long checkInterval;
     private RegisteredServer targetServer;
-    private ScheduledTask queueTask;
+    private ScheduledTask limboTask;
+    private Component offlineServerMessage;
 
     @Inject
     public LimboReconnect(Logger logger, ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -56,32 +66,6 @@ public class LimboReconnect {
         this.factory = (LimboFactory) this.server.getPluginManager().getPlugin("limboapi").flatMap(PluginContainer::getInstance).orElseThrow();
     }
 
-    @Subscribe
-    public void onProxyInitialization(ProxyInitializeEvent event) {
-        this.reload();
-    }
-
-    public void reload() {
-        Config.IMP.reload(this.configFile);
-
-//        ComponentSerializer<Component, Component, String> serializer = Serializers.valueOf(Config.IMP.MAIN.SERIALIZER.toUpperCase(Locale.ROOT)).getSerializer();
-//        if (serializer == null) {
-//            LOGGER.warn("The specified serializer could not be founded, using default. (LEGACY_AMPERSAND)");
-//            setSerializer(new Serializer(Objects.requireNonNull(Serializers.LEGACY_AMPERSAND.getSerializer())));
-//        } else {
-//            setSerializer(new Serializer(serializer));
-//        }
-
-//        this.checkInterval = Config.IMP.MAIN.CHECK_INTERVAL;
-        VirtualWorld world = this.factory.createVirtualWorld(Dimension.OVERWORLD, 0, 100, 0, (float) 90, (float) 0.0);
-        this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000);
-
-        this.server.getEventManager().register(this, new ReconnectListener(this));
-//        CommandManager manager = this.server.getCommandManager();
-//        manager.unregister("limboreconnect");
-//        manager.register("limboreconnect", new LimboReconnectCommand(this), "lr", "reconnect");
-    }
-
     private static void setSerializer(Serializer serializer) {
         SERIALIZER = serializer;
     }
@@ -90,11 +74,55 @@ public class LimboReconnect {
         LOGGER = logger;
     }
 
-    public static Serializer getSerializer() {
-        return SERIALIZER;
+    @Subscribe
+    public void onProxyInitialization(ProxyInitializeEvent event) {
+        this.reload();
     }
 
-    public void addPlayer(Player player, RegisteredServer server) {
-        this.limbo.spawnPlayer(player, new ReconnectHandler(this, server));
+    public void reload() {
+        Config.IMP.reload(this.configFile);
+
+        ComponentSerializer<Component, Component, String> serializer = Serializers.valueOf(Config.IMP.MESSAGES.SERIALIZER.toUpperCase(Locale.ROOT)).getSerializer();
+        if (serializer == null) {
+            LOGGER.warn("The specified serializer could not be founded, using default. (LEGACY_AMPERSAND)");
+            setSerializer(new Serializer(Objects.requireNonNull(Serializers.LEGACY_AMPERSAND.getSerializer())));
+        } else {
+            setSerializer(new Serializer(serializer));
+        }
+
+        this.checkInterval = Config.IMP.CHECK_INTERVAL;
+        VirtualWorld world = this.factory.createVirtualWorld(Dimension.OVERWORLD, 0, 100, 0, (float) 90, (float) 0.0);
+        this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000);
+
+        Optional<RegisteredServer> server = this.getServer().getServer(Config.IMP.TARGET_SERVER);
+        server.ifPresent(registeredServer -> this.targetServer = registeredServer);
+
+        this.offlineServerMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.OFFLINE_SERVER_MESSAGE);
+
+        this.server.getEventManager().register(this, new ReconnectListener(this));
+
+        startTask();
+    }
+
+    private ProxyServer getServer() {
+        return this.server;
+    }
+
+    public void addPlayer(Player player) {
+        this.limbo.spawnPlayer(player, new ReconnectHandler(this));
+    }
+
+    private void startTask() {
+        if (this.limboTask != null) this.limboTask.cancel();
+        this.limboTask = this.getServer().getScheduler().buildTask(this, () -> {
+            try {
+                ServerPing serverPing = this.targetServer.ping().get();
+                if (serverPing.getPlayers().isPresent()) {
+                    this.players.forEach(p -> p.disconnect(this.targetServer));
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                this.players.forEach(p -> p.getProxyPlayer().sendMessage(this.offlineServerMessage));
+            }
+        }).repeat(checkInterval, TimeUnit.SECONDS).schedule();
     }
 }
