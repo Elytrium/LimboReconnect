@@ -39,27 +39,22 @@ public class ReconnectListener {
             Player player = kickEvent.getPlayer();
             if (kickEvent.getServerKickReason().isEmpty()) {
                 player.disconnect(Component.text(""));
-                System.out.println(1);
                 return false;
             }
             if (kickEvent.getServerKickReason().get() instanceof TranslatableComponent) {
                 player.disconnect(kickEvent.getServerKickReason().get());
-                System.out.println(2);
                 return false;
             }
             TextComponent kickMessage = (TextComponent) kickEvent.getServerKickReason().get();
             if (kickEvent.kickedDuringServerConnect()) {
                 player.disconnect(kickMessage);
-                System.out.println(3);
                 return false;
             }
             if (kickMessage.content().contains(Config.IMP.RESTART_MESSAGE)) {
                 this.plugin.addPlayer(player);
-                System.out.println(4);
                 return true;
             } else {
                 player.disconnect(kickMessage);
-                System.out.println(5);
                 return false;
             }
         });
