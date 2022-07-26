@@ -1,10 +1,10 @@
 # LimboReconnect
 **IN DEVELOPMENT**
 
-Reconnect your players back after server restart.
+Reconnect your players back after server restart. Built with [LimboAPI](https://github.com/elytrium/limboapi).
 
 ## Requirements
 <ul>
-	<li>Latest [Velocity](https://papermc.io/downloads#Velocity)</li>
-	<li>Latest [LimboAPI](https://github.com/elytrium/limboapi)</li>
+	<li>Latest Velocity</li>
+	<li>Latest LimboAPI</li>
 </ul>
