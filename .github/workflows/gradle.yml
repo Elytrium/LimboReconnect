@@ -37,5 +37,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v3.1.0
         with:
-          name: LimboQueue
+          name: LimboReconnect
           path: "build/libs/LimboReconnect-*.jar"
