@@ -46,12 +46,7 @@ public class ReconnectListener {
                 kickMessage = ((TextComponent) kickReason).content();
             }
 
-            if (kickEvent.kickedDuringServerConnect()) {
-                player.disconnect(kickReason);
-                return false;
-            }
-
-            if (kickMessage.contains(Config.IMP.RESTART_MESSAGE)) {
+            if (kickMessage.contains(Config.IMP.RESTART_MESSAGE) && kickEvent.getServer().equals(this.plugin.targetServer)) {
                 this.plugin.addPlayer(player);
                 return true;
             } else {

@@ -66,7 +66,7 @@ public class LimboReconnect {
     public HashSet<LimboPlayer> players = new HashSet<>();
     private Limbo limbo;
     private long checkInterval;
-    private RegisteredServer targetServer;
+    public RegisteredServer targetServer;
     private ScheduledTask limboTask;
     private Component offlineServerMessage;
 
