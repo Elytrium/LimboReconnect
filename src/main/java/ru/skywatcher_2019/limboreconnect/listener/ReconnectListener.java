@@ -27,32 +27,33 @@ import ru.skywatcher_2019.limboreconnect.Config;
 import ru.skywatcher_2019.limboreconnect.LimboReconnect;
 
 public class ReconnectListener {
-    private final LimboReconnect plugin;
 
-    public ReconnectListener(LimboReconnect plugin) {
-        this.plugin = plugin;
-    }
+  private final LimboReconnect plugin;
 
-    @Subscribe
-    public void onLoginLimboRegister(LoginLimboRegisterEvent event) {
-        event.setOnKickCallback(kickEvent -> {
-            Player player = kickEvent.getPlayer();
-            Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
-            String kickMessage;
+  public ReconnectListener(LimboReconnect plugin) {
+    this.plugin = plugin;
+  }
 
-            if (kickReason instanceof TranslatableComponent) {
-                kickMessage = ((TranslatableComponent) kickReason).key();
-            } else {
-                kickMessage = ((TextComponent) kickReason).content();
-            }
+  @Subscribe
+  public void onLoginLimboRegister(LoginLimboRegisterEvent event) {
+    event.setOnKickCallback(kickEvent -> {
+      Player player = kickEvent.getPlayer();
+      Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
+      String kickMessage;
 
-            if (kickMessage.contains(Config.IMP.RESTART_MESSAGE) && kickEvent.getServer().equals(this.plugin.targetServer)) {
-                this.plugin.addPlayer(player);
-                return true;
-            } else {
-                player.disconnect(kickReason);
-                return false;
-            }
-        });
-    }
+      if (kickReason instanceof TranslatableComponent) {
+        kickMessage = ((TranslatableComponent) kickReason).key();
+      } else {
+        kickMessage = ((TextComponent) kickReason).content();
+      }
+
+      if (kickMessage.contains(Config.IMP.RESTART_MESSAGE) && kickEvent.getServer().equals(this.plugin.targetServer)) {
+        this.plugin.addPlayer(player);
+        return true;
+      } else {
+        player.disconnect(kickReason);
+        return false;
+      }
+    });
+  }
 }
