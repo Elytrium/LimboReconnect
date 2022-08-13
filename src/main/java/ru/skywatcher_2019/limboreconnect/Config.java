@@ -24,7 +24,7 @@ public class Config extends YamlConfig {
   @Ignore
   public static final Config IMP = new Config();
 
-  @Comment("Send player to the limbo ok kick, if kick message contains this text")
+  @Comment("Send player to the limbo on kick, if kick message contains this text")
   public String RESTART_MESSAGE = "Server is restarting";
 
   @Comment("Server status check interval in seconds")
