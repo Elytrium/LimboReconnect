@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 - 2022 SkyWatcher_2019
+ * Copyright (C) 2022 SkyWatcher_2019
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 package ru.skywatcher_2019.limboreconnect.listener;
 
 import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.proxy.Player;
 import net.elytrium.limboapi.api.event.LoginLimboRegisterEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -37,7 +36,6 @@ public class ReconnectListener {
   @Subscribe
   public void onLoginLimboRegister(LoginLimboRegisterEvent event) {
     event.setOnKickCallback(kickEvent -> {
-      Player player = kickEvent.getPlayer();
       Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
       String kickMessage;
 
@@ -46,12 +44,12 @@ public class ReconnectListener {
       } else {
         kickMessage = ((TextComponent) kickReason).content();
       }
-
-      if (kickMessage.contains(Config.IMP.RESTART_MESSAGE) && kickEvent.getServer().equals(this.plugin.targetServer)) {
-        this.plugin.addPlayer(player);
+      if (kickMessage.equals("velocity.error.internal-server-connection-error") || kickMessage.contains(Config.IMP.RESTART_MESSAGE) ||
+          kickMessage.length() == 0) {
+        this.plugin.addPlayer(kickEvent.getPlayer(), kickEvent.getServer());
         return true;
       } else {
-        player.disconnect(kickReason);
+        kickEvent.getPlayer().disconnect(kickReason);
         return false;
       }
     });

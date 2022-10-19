@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 - 2022 SkyWatcher_2019
+ * Copyright (C) 2022 SkyWatcher_2019
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,21 +24,20 @@ public class Config extends YamlConfig {
   @Ignore
   public static final Config IMP = new Config();
 
-  @Comment("Send player to the limbo on kick, if kick message contains this text")
+  @Comment("Send player to the limbo, if disconnect reason contains this text")
   public String RESTART_MESSAGE = "Server is restarting";
 
-  @Comment("Server status check interval in seconds")
-  public long CHECK_INTERVAL = 1;
-  @Comment("Server that sould be checked for restarts")
-  public String TARGET_SERVER = "survival";
+  @Comment("Server status check interval in milliseconds")
+  public long CHECK_INTERVAL = 1000;
+  @Comment("Server status check timeout in milliseconds")
+  public long PING_TIMEOUT = 500;
 
   @Create
   public MESSAGES MESSAGES;
 
   public static class MESSAGES {
 
-    @Comment("Serializers: LEGACY_AMPERSAND, LEGACY_SECTION, MINIMESSAGE")
-    public String SERIALIZER = "MINIMESSAGE";
-    public String OFFLINE_SERVER_MESSAGE = "Server is restarting, please wait...";
+    public String SERVER_OFFLINE = "<red>Server is restarting, please wait...";
+    public String CONNECTING = "<aqua>Connecting to the server...";
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 - 2022 SkyWatcher_2019
+ * Copyright (C) 2022 SkyWatcher_2019
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 package ru.skywatcher_2019.limboreconnect.handler;
 
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboSessionHandler;
 import net.elytrium.limboapi.api.player.LimboPlayer;
@@ -25,17 +26,19 @@ import ru.skywatcher_2019.limboreconnect.LimboReconnect;
 public class ReconnectHandler implements LimboSessionHandler {
 
   private final LimboReconnect plugin;
+  private final RegisteredServer server;
   private LimboPlayer player;
 
-  public ReconnectHandler(LimboReconnect plugin) {
+  public ReconnectHandler(LimboReconnect plugin, RegisteredServer server) {
     this.plugin = plugin;
+    this.server = server;
   }
 
   @Override
   public void onSpawn(Limbo server, LimboPlayer player) {
     this.player = player;
     this.player.disableFalling();
-    this.plugin.players.add(player);
+    this.plugin.players.put(this.player, this.server);
   }
 
   @Override

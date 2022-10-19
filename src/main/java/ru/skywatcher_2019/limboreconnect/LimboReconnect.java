@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 - 2022 SkyWatcher_2019
+ * Copyright (C) 2022 SkyWatcher_2019
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,12 +29,13 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import net.elytrium.java.commons.mc.serialization.Serializer;
 import net.elytrium.java.commons.mc.serialization.Serializers;
 import net.elytrium.limboapi.api.Limbo;
@@ -52,7 +53,7 @@ import ru.skywatcher_2019.limboreconnect.listener.ReconnectListener;
     id = "limboreconnect",
     name = "LimboReconnect",
     version = BuildConstants.VERSION,
-    authors = {"SkyWatcher_2019"}
+    authors = {"SkyWatcher_2019", "hevav"}
 )
 public class LimboReconnect {
 
@@ -62,12 +63,11 @@ public class LimboReconnect {
   private final ProxyServer server;
   private final File configFile;
   private final LimboFactory factory;
-  public HashSet<LimboPlayer> players = new HashSet<>();
-  public RegisteredServer targetServer;
+  public Map<LimboPlayer, RegisteredServer> players = new ConcurrentHashMap<>();
   private Limbo limbo;
-  private long checkInterval;
   private ScheduledTask limboTask;
   private Component offlineServerMessage;
+  private Component connectingMessage;
 
   @Inject
   public LimboReconnect(Logger logger, ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -97,8 +97,7 @@ public class LimboReconnect {
   public void reload() {
     Config.IMP.reload(this.configFile);
 
-    ComponentSerializer<Component, Component, String> serializer = Serializers.valueOf(Config.IMP.MESSAGES.SERIALIZER.toUpperCase(Locale.ROOT))
-        .getSerializer();
+    ComponentSerializer<Component, Component, String> serializer = Serializers.MINIMESSAGE.getSerializer();
     if (serializer == null) {
       LOGGER.warn("The specified serializer could not be founded, using default. (LEGACY_AMPERSAND)");
       setSerializer(new Serializer(Objects.requireNonNull(Serializers.LEGACY_AMPERSAND.getSerializer())));
@@ -106,20 +105,11 @@ public class LimboReconnect {
       setSerializer(new Serializer(serializer));
     }
 
-    this.checkInterval = Config.IMP.CHECK_INTERVAL;
     VirtualWorld world = this.factory.createVirtualWorld(Dimension.OVERWORLD, 0, 100, 0, (float) 90, (float) 0.0);
     this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000);
 
-    Optional<RegisteredServer> server = this.getServer().getServer(Config.IMP.TARGET_SERVER);
-    if (server.isPresent()) {
-      this.targetServer = server.get();
-    } else {
-      LOGGER.error("Cannot find target server. check your config.");
-      this.server.getEventManager().unregisterListeners(this);
-      return;
-    }
-
-    this.offlineServerMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.OFFLINE_SERVER_MESSAGE);
+    this.offlineServerMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.SERVER_OFFLINE);
+    this.connectingMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.CONNECTING);
 
     this.server.getEventManager().register(this, new ReconnectListener(this));
 
@@ -130,25 +120,28 @@ public class LimboReconnect {
     return this.server;
   }
 
-  public void addPlayer(Player player) {
-    this.limbo.spawnPlayer(player, new ReconnectHandler(this));
+  public void addPlayer(Player player, RegisteredServer server) {
+    this.limbo.spawnPlayer(player, new ReconnectHandler(this, server));
   }
 
   private void startTask() {
-      if (this.limboTask != null) {
-          this.limboTask.cancel();
-      }
+    if (this.limboTask != null) {
+      this.limboTask.cancel();
+    }
     this.limboTask = this.getServer().getScheduler().buildTask(this, () -> {
-        if (this.players.isEmpty()) {
-            return;
-        }
-      try {
-        this.targetServer.ping().join();
-      } catch (CompletionException e) {
-        this.players.forEach(p -> p.getProxyPlayer().sendMessage(this.offlineServerMessage));
+      if (this.players.isEmpty()) {
         return;
       }
-      this.players.forEach(p -> p.disconnect(this.targetServer));
-    }).repeat(checkInterval, TimeUnit.SECONDS).schedule();
+      this.players.forEach((player, server) -> {
+        try {
+          server.ping().get(Config.IMP.PING_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (CompletionException | InterruptedException | ExecutionException | TimeoutException e) {
+          player.getProxyPlayer().sendMessage(this.offlineServerMessage);
+          return;
+        }
+        player.getProxyPlayer().sendMessage(this.connectingMessage);
+        player.disconnect(server);
+      });
+    }).repeat(Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS).schedule();
   }
 }

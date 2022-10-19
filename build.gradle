@@ -1,70 +1,74 @@
 plugins {
-    id 'java'
-    id 'eclipse'
-    id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.1"
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+  id 'java'
+  id 'eclipse'
+  id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.1"
+  id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group = 'ru.skywatcher_2019'
-version = '1.0-SNAPSHOT'
+version = '1.1-SNAPSHOT'
 
 compileJava {
-    getOptions().setEncoding("UTF-8")
+  getOptions().setEncoding("UTF-8")
 }
 
 repositories {
-    mavenCentral()
-    maven {
-        name = 'papermc-repo'
-        url = 'https://repo.papermc.io/repository/maven-public/'
-    }
-    maven {
-        setName("elytrium-repo")
-        setUrl("https://maven.elytrium.net/repo/")
-    }
+  mavenCentral()
+  maven {
+    name = "elytrium-repo"
+    url = "https://maven.elytrium.net/repo/"
+  }
+  maven {
+    name = "papermc-repo"
+    url = "https://papermc.io/repo/repository/maven-public/"
+  }
 }
 
 dependencies {
-    compileOnly 'com.velocitypowered:velocity-api:3.1.1'
-    annotationProcessor 'com.velocitypowered:velocity-api:3.1.1'
-    implementation "net.elytrium:elytrium-java-commons:1.0.8"
-    compileOnly "net.elytrium:limboapi-api:1.0.6"
+  compileOnly 'com.velocitypowered:velocity-api:3.1.2-SNAPSHOT'
+  annotationProcessor 'com.velocitypowered:velocity-api:3.1.2-SNAPSHOT'
+  implementation "net.elytrium:elytrium-java-commons:1.0.8"
+  compileOnly "net.elytrium:limboapi-api:1.0.6"
 }
 
 shadowJar {
-    getArchiveClassifier().set("")
+  getArchiveClassifier().set("")
 }
 
 def targetJavaVersion = 11
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
+  def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+  sourceCompatibility = javaVersion
+  targetCompatibility = javaVersion
+  if (JavaVersion.current() < javaVersion) {
+    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+  }
 }
 
 tasks.withType(JavaCompile).configureEach {
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release = targetJavaVersion
-    }
+  if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+    options.release = targetJavaVersion
+  }
 }
 
 def templateSource = file('src/main/templates')
 def templateDest = layout.buildDirectory.dir('generated/sources/templates')
-def generateTemplates = tasks.register('generateTemplates', Copy) { task ->
-    def props = [
-            'version': project.version
-    ]
-    task.inputs.properties props
+def generateTemplates = tasks.register('generateTemplates', Copy) {task ->
+  def props = [
+      'version': project.version
+  ]
+  task.inputs.properties props
 
-    task.from templateSource
-    task.into templateDest
-    task.expand props
+  task.from templateSource
+  task.into templateDest
+  task.expand props
 }
 
-sourceSets.main.java.srcDir(generateTemplates.map { it.outputs })
+sourceSets.main.java.srcDir(
+    generateTemplates.map {
+      it.outputs
+    }
+)
 
 rootProject.idea.project.settings.taskTriggers.afterSync generateTemplates
 project.eclipse.synchronizationTasks(generateTemplates)
