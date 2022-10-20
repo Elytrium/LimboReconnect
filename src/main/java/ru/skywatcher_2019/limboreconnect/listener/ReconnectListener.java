@@ -44,7 +44,7 @@ public class ReconnectListener {
       } else {
         kickMessage = ((TextComponent) kickReason).content();
       }
-      if (kickMessage.equals("velocity.error.internal-server-connection-error") || kickMessage.contains(Config.IMP.RESTART_MESSAGE) ||
+      if (kickMessage.equals("velocity.error.internal-server-connection-error") || kickMessage.matches(Config.IMP.RESTART_MESSAGE) ||
           kickMessage.length() == 0) {
         this.plugin.addPlayer(kickEvent.getPlayer(), kickEvent.getServer());
         return true;
