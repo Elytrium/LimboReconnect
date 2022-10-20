@@ -24,8 +24,8 @@ public class Config extends YamlConfig {
   @Ignore
   public static final Config IMP = new Config();
 
-  @Comment("Send player to the limbo, if disconnect reason contains this text")
-  public String RESTART_MESSAGE = "Server is restarting";
+  @Comment("Send player to the limbo, if disconnect reason contains this text (using regex)")
+  public String RESTART_MESSAGE = "((?i)^(server closed|server is restarting|outdated (server|client).*))+$";
 
   @Comment("Server status check interval in milliseconds")
   public long CHECK_INTERVAL = 1000;
