@@ -37,15 +37,9 @@ public class ReconnectListener {
   public void onLoginLimboRegister(LoginLimboRegisterEvent event) {
     event.setOnKickCallback(kickEvent -> {
       Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
-      String kickMessage;
+      String kickMessage = kickReason instanceof TranslatableComponent ? ((TranslatableComponent) kickReason).key() : ((TextComponent) kickReason).content();
 
-      if (kickReason instanceof TranslatableComponent) {
-        kickMessage = ((TranslatableComponent) kickReason).key();
-      } else {
-        kickMessage = ((TextComponent) kickReason).content();
-      }
-      if (kickMessage.equals("velocity.error.internal-server-connection-error") || kickMessage.matches(Config.IMP.RESTART_MESSAGE) ||
-          kickMessage.length() == 0) {
+      if (kickMessage.equals("velocity.error.internal-server-connection-error") || kickMessage.matches(Config.IMP.RESTART_MESSAGE)) {
         this.plugin.addPlayer(kickEvent.getPlayer(), kickEvent.getServer());
         return true;
       } else {
