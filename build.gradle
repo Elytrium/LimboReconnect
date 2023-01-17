@@ -27,13 +27,15 @@ repositories {
 dependencies {
   compileOnly 'com.velocitypowered:velocity-api:3.1.2-SNAPSHOT'
   annotationProcessor 'com.velocitypowered:velocity-api:3.1.2-SNAPSHOT'
-  implementation "net.elytrium.commons:config:1.2.1-SNAPSHOT"
+  implementation "net.elytrium.commons:config:1.2.1"
   implementation "net.elytrium.commons:kyori:1.2.0"
-  compileOnly "net.elytrium:limboapi-api:1.0.6"
+  compileOnly "net.elytrium:limboapi-api:1.1.0"
 }
 
 shadowJar {
   getArchiveClassifier().set("")
+  relocate("net.elytrium.commons.kyori", "net.elytrium.limboapi.thirdparty.commons.kyori")
+  relocate("net.elytrium.commons.config", "net.elytrium.limboapi.thirdparty.commons.config")
 }
 
 def targetJavaVersion = 11
