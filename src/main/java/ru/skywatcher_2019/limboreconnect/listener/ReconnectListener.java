@@ -20,12 +20,17 @@ package ru.skywatcher_2019.limboreconnect.listener;
 import com.velocitypowered.api.event.Subscribe;
 import net.elytrium.limboapi.api.event.LoginLimboRegisterEvent;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.TranslatableComponent;
+import net.kyori.adventure.text.flattener.ComponentFlattener;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import ru.skywatcher_2019.limboreconnect.Config;
 import ru.skywatcher_2019.limboreconnect.LimboReconnect;
+import java.util.Objects;
 
 public class ReconnectListener {
+
+  public static final PlainTextComponentSerializer SERIALIZER = PlainTextComponentSerializer.builder().flattener(
+     ComponentFlattener.basic()
+  ).build();
 
   private final LimboReconnect plugin;
 
@@ -37,7 +42,7 @@ public class ReconnectListener {
   public void onLoginLimboRegister(LoginLimboRegisterEvent event) {
     event.setOnKickCallback(kickEvent -> {
       Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
-      String kickMessage = kickReason instanceof TranslatableComponent ? ((TranslatableComponent) kickReason).key() : ((TextComponent) kickReason).content();
+      String kickMessage = Objects.requireNonNullElse(SERIALIZER.serialize(kickReason), "unknown");
 
       if (kickMessage.equals("velocity.error.internal-server-connection-error") || kickMessage.matches(Config.IMP.RESTART_MESSAGE)) {
         this.plugin.addPlayer(kickEvent.getPlayer(), kickEvent.getServer());

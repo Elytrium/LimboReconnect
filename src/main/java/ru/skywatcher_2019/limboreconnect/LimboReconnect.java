@@ -30,14 +30,12 @@ import com.velocitypowered.api.scheduler.ScheduledTask;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import net.elytrium.java.commons.mc.serialization.Serializer;
-import net.elytrium.java.commons.mc.serialization.Serializers;
+import net.elytrium.commons.kyori.serialization.Serializers;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
@@ -59,7 +57,7 @@ public class LimboReconnect {
 
   @Inject
   private static Logger LOGGER;
-  private static Serializer SERIALIZER;
+  private static ComponentSerializer<Component, Component, String> SERIALIZER;
   private final ProxyServer server;
   private final File configFile;
   private final LimboFactory factory;
@@ -81,7 +79,7 @@ public class LimboReconnect {
     this.factory = (LimboFactory) this.server.getPluginManager().getPlugin("limboapi").flatMap(PluginContainer::getInstance).orElseThrow();
   }
 
-  private static void setSerializer(Serializer serializer) {
+  private static void setSerializer(ComponentSerializer<Component, Component, String> serializer) {
     SERIALIZER = serializer;
   }
 
@@ -100,9 +98,9 @@ public class LimboReconnect {
     ComponentSerializer<Component, Component, String> serializer = Serializers.MINIMESSAGE.getSerializer();
     if (serializer == null) {
       LOGGER.warn("The specified serializer could not be founded, using default. (LEGACY_AMPERSAND)");
-      setSerializer(new Serializer(Objects.requireNonNull(Serializers.LEGACY_AMPERSAND.getSerializer())));
+      setSerializer(Serializers.LEGACY_AMPERSAND.getSerializer());
     } else {
-      setSerializer(new Serializer(serializer));
+      setSerializer(serializer);
     }
 
     VirtualWorld world = this.factory.createVirtualWorld(Dimension.OVERWORLD, 0, 100, 0, (float) 90, (float) 0.0);

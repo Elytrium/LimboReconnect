@@ -17,7 +17,7 @@
 
 package ru.skywatcher_2019.limboreconnect;
 
-import net.elytrium.java.commons.config.YamlConfig;
+import net.elytrium.commons.config.YamlConfig;
 
 public class Config extends YamlConfig {
 
@@ -25,7 +25,7 @@ public class Config extends YamlConfig {
   public static final Config IMP = new Config();
 
   @Comment("Send player to the limbo, if disconnect reason contains this text (using regex)")
-  public String RESTART_MESSAGE = "/((?i)^(server closed|server is restarting))+$/gm";
+  public String RESTART_MESSAGE = "((?i)^(server closed|multiplayer\\.disconnect\\.server_shutdown|server is restarting))+$";
 
   @Comment("Server status check interval in milliseconds")
   public long CHECK_INTERVAL = 1000;
