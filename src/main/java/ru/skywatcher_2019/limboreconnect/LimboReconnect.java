@@ -29,13 +29,18 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import net.elytrium.commons.kyori.serialization.Serializers;
+import com.velocitypowered.proxy.connection.MinecraftConnection;
+import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
+import com.velocitypowered.proxy.connection.client.ClientPlaySessionHandler;
+import com.velocitypowered.proxy.protocol.packet.BossBar;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
@@ -43,6 +48,7 @@ import net.elytrium.limboapi.api.chunk.VirtualWorld;
 import net.elytrium.limboapi.api.player.LimboPlayer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
+import net.kyori.adventure.title.Title;
 import org.slf4j.Logger;
 import ru.skywatcher_2019.limboreconnect.handler.ReconnectHandler;
 import ru.skywatcher_2019.limboreconnect.listener.ReconnectListener;
@@ -66,6 +72,10 @@ public class LimboReconnect {
   private ScheduledTask limboTask;
   private Component offlineServerMessage;
   private Component connectingMessage;
+  private Component offlineTitleMessage;
+  private Component offlineSubtitleMessage;
+  private Component connectingTitleMessage;
+  private Component connectingSubtitleMessage;
 
   @Inject
   public LimboReconnect(Logger logger, ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -95,19 +105,17 @@ public class LimboReconnect {
   public void reload() {
     Config.IMP.reload(this.configFile);
 
-    ComponentSerializer<Component, Component, String> serializer = Serializers.MINIMESSAGE.getSerializer();
-    if (serializer == null) {
-      LOGGER.warn("The specified serializer could not be founded, using default. (LEGACY_AMPERSAND)");
-      setSerializer(Serializers.LEGACY_AMPERSAND.getSerializer());
-    } else {
-      setSerializer(serializer);
-    }
+    setSerializer(Config.IMP.SERIALIZER.getSerializer());
 
     VirtualWorld world = this.factory.createVirtualWorld(Dimension.OVERWORLD, 0, 100, 0, (float) 90, (float) 0.0);
     this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000);
 
     this.offlineServerMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.SERVER_OFFLINE);
     this.connectingMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.CONNECTING);
+    this.offlineTitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.OFFLINE_TITLE);
+    this.offlineSubtitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.OFFLINE_SUBTITLE);
+    this.connectingTitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.CONNECTING_TITLE);
+    this.connectingSubtitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.CONNECTING_SUBTITLE);
 
     this.server.getEventManager().register(this, new ReconnectListener(this));
 
@@ -119,6 +127,31 @@ public class LimboReconnect {
   }
 
   public void addPlayer(Player player, RegisteredServer server) {
+    ConnectedPlayer connectedPlayer = (ConnectedPlayer) player;
+    MinecraftConnection connection = connectedPlayer.getConnection();
+    if (connection.getSessionHandler() instanceof ClientPlaySessionHandler) {
+      ClientPlaySessionHandler sessionHandler = (ClientPlaySessionHandler) connection.getSessionHandler();
+      for (UUID bossBar : sessionHandler.getServerBossBars()) {
+        BossBar deletePacket = new BossBar();
+        deletePacket.setUuid(bossBar);
+        deletePacket.setAction(BossBar.REMOVE);
+        connectedPlayer.getConnection().delayedWrite(deletePacket);
+      }
+      sessionHandler.getServerBossBars().clear();
+    }
+
+    connectedPlayer.getTabList().clearAll();
+
+    player.showTitle(Title.title(
+       this.offlineTitleMessage,
+       this.offlineSubtitleMessage,
+       Title.Times.times(
+          Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
+          Duration.ofDays(32),
+          Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
+       )
+    ));
+
     this.limbo.spawnPlayer(player, new ReconnectHandler(this, server));
   }
 
@@ -134,10 +167,23 @@ public class LimboReconnect {
         try {
           server.ping().get(Config.IMP.PING_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (CompletionException | InterruptedException | ExecutionException | TimeoutException e) {
-          player.getProxyPlayer().sendMessage(this.offlineServerMessage);
+          if (!Config.IMP.MESSAGES.SERVER_OFFLINE.isEmpty()) {
+            player.getProxyPlayer().sendMessage(this.offlineServerMessage);
+          }
           return;
         }
-        player.getProxyPlayer().sendMessage(this.connectingMessage);
+        if (!Config.IMP.MESSAGES.CONNECTING.isEmpty()) {
+          player.getProxyPlayer().sendMessage(this.connectingMessage);
+        }
+        player.getProxyPlayer().showTitle(Title.title(
+           this.connectingTitleMessage,
+           this.connectingSubtitleMessage,
+           Title.Times.times(
+              Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
+              Duration.ofDays(32),
+              Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
+           )
+        ));
         player.disconnect(server);
       });
     }).repeat(Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS).schedule();

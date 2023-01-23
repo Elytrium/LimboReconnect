@@ -18,11 +18,22 @@
 package ru.skywatcher_2019.limboreconnect;
 
 import net.elytrium.commons.config.YamlConfig;
+import net.elytrium.commons.kyori.serialization.Serializers;
 
 public class Config extends YamlConfig {
 
   @Ignore
   public static final Config IMP = new Config();
+
+  @Comment({
+     "Available serializers:",
+     "LEGACY_AMPERSAND - \"&c&lExample &c&9Text\".",
+     "LEGACY_SECTION - \"§c§lExample §c§9Text\".",
+     "MINIMESSAGE - \"<bold><red>Example</red> <blue>Text</blue></bold>\". (https://webui.adventure.kyori.net/)",
+     "GSON - \"[{\"text\":\"Example\",\"bold\":true,\"color\":\"red\"},{\"text\":\" \",\"bold\":true},{\"text\":\"Text\",\"bold\":true,\"color\":\"blue\"}]\". (https://minecraft.tools/en/json_text.php/)",
+     "GSON_COLOR_DOWNSAMPLING - Same as GSON, but uses downsampling."
+  })
+  public Serializers SERIALIZER = Serializers.MINIMESSAGE;
 
   @Comment("Send player to the limbo, if disconnect reason contains this text (using regex)")
   public String RESTART_MESSAGE = "((?i)^(server closed|multiplayer\\.disconnect\\.server_shutdown|server is restarting))+$";
@@ -33,11 +44,34 @@ public class Config extends YamlConfig {
   public long PING_TIMEOUT = 500;
 
   @Create
+  public TITLE TITLE;
+
+  public static class TITLE {
+    @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
+    public int FADE_IN = 10;
+    @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
+    public int FADE_OUT = 20;
+  }
+
+  @Create
   public MESSAGES MESSAGES;
 
+  @Comment("Empty messages will not be sent")
   public static class MESSAGES {
 
     public String SERVER_OFFLINE = "<red>Server is restarting, please wait...";
     public String CONNECTING = "<aqua>Connecting to the server...";
+
+    @Create
+    public TITLE TITLE;
+
+    public static class TITLE {
+
+      public String OFFLINE_TITLE = "";
+      public String OFFLINE_SUBTITLE = "<red>Server is restarting, please wait...";
+
+      public String CONNECTING_TITLE = "";
+      public String CONNECTING_SUBTITLE = "<aqua>Connecting to the server...";
+    }
   }
 }
