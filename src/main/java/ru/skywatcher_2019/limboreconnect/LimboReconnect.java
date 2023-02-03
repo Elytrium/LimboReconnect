@@ -107,7 +107,7 @@ public class LimboReconnect {
 
     setSerializer(Config.IMP.SERIALIZER.getSerializer());
 
-    VirtualWorld world = this.factory.createVirtualWorld(Dimension.OVERWORLD, 0, 100, 0, (float) 90, (float) 0.0);
+    VirtualWorld world = this.factory.createVirtualWorld(Dimension.valueOf(Config.IMP.WORLD.DIMENSION), 0, 100, 0, (float) 90, (float) 0.0);
     this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000);
 
     this.offlineServerMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.SERVER_OFFLINE);

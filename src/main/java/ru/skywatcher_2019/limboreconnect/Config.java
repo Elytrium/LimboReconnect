@@ -44,6 +44,17 @@ public class Config extends YamlConfig {
   public long PING_TIMEOUT = 500;
 
   @Create
+  public WORLD WORLD;
+
+  public static class WORLD {
+
+    @Comment(
+        "Dimensions: OVERWORLD, NETHER, THE_END"
+    )
+    public String DIMENSION = "OVERWORLD";
+  }
+
+  @Create
   public TITLE TITLE;
 
   public static class TITLE {
