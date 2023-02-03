@@ -44,7 +44,7 @@ public class Config extends YamlConfig {
   public long PING_TIMEOUT = 500;
 
   @Create
-    public Config.MAIN.WORLD WORLD;
+    public WORLD WORLD;
 
     public static class WORLD {
 
