@@ -54,8 +54,6 @@ public class Config extends YamlConfig {
       public String DIMENSION = "OVERWORLD";
     }
 
-  }
-
   @Create
   public TITLE TITLE;
 
