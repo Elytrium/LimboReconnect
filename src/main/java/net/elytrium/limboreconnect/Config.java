@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 SkyWatcher_2019
+ * Copyright (C) 2022 - 2023 Elytrium
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ru.skywatcher_2019.limboreconnect;
+package net.elytrium.limboreconnect;
 
 import net.elytrium.commons.config.YamlConfig;
 import net.elytrium.commons.kyori.serialization.Serializers;
@@ -26,12 +26,12 @@ public class Config extends YamlConfig {
   public static final Config IMP = new Config();
 
   @Comment({
-     "Available serializers:",
-     "LEGACY_AMPERSAND - \"&c&lExample &c&9Text\".",
-     "LEGACY_SECTION - \"§c§lExample §c§9Text\".",
-     "MINIMESSAGE - \"<bold><red>Example</red> <blue>Text</blue></bold>\". (https://webui.adventure.kyori.net/)",
-     "GSON - \"[{\"text\":\"Example\",\"bold\":true,\"color\":\"red\"},{\"text\":\" \",\"bold\":true},{\"text\":\"Text\",\"bold\":true,\"color\":\"blue\"}]\". (https://minecraft.tools/en/json_text.php/)",
-     "GSON_COLOR_DOWNSAMPLING - Same as GSON, but uses downsampling."
+      "Available serializers:",
+      "LEGACY_AMPERSAND - \"&c&lExample &c&9Text\".",
+      "LEGACY_SECTION - \"§c§lExample §c§9Text\".",
+      "MINIMESSAGE - \"<bold><red>Example</red> <blue>Text</blue></bold>\". (https://webui.adventure.kyori.net/)",
+      "GSON - \"[{\"text\":\"Example\",\"bold\":true,\"color\":\"red\"},{\"text\":\" \",\"bold\":true},{\"text\":\"Text\",\"bold\":true,\"color\":\"blue\"}]\". (https://minecraft.tools/en/json_text.php/)",
+      "GSON_COLOR_DOWNSAMPLING - Same as GSON, but uses downsampling."
   })
   public Serializers SERIALIZER = Serializers.MINIMESSAGE;
 
@@ -45,6 +45,10 @@ public class Config extends YamlConfig {
 
   @Create
   public WORLD WORLD;
+  @Create
+  public TITLE TITLE;
+  @Create
+  public MESSAGES MESSAGES;
 
   public static class WORLD {
 
@@ -54,18 +58,13 @@ public class Config extends YamlConfig {
     public String DIMENSION = "OVERWORLD";
   }
 
-  @Create
-  public TITLE TITLE;
-
   public static class TITLE {
+
     @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
     public int FADE_IN = 10;
     @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
     public int FADE_OUT = 20;
   }
-
-  @Create
-  public MESSAGES MESSAGES;
 
   @Comment("Empty messages will not be sent")
   public static class MESSAGES {

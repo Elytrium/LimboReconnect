@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 SkyWatcher_2019
+ * Copyright (C) 2022 - 2023 Elytrium
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ru.skywatcher_2019.limboreconnect;
+package net.elytrium.limboreconnect;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
@@ -27,6 +27,11 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
+import com.velocitypowered.proxy.connection.MinecraftConnection;
+import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
+import com.velocitypowered.proxy.connection.client.ClientPlaySessionHandler;
+import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
+import com.velocitypowered.proxy.protocol.packet.BossBar;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -37,21 +42,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import com.velocitypowered.proxy.connection.MinecraftConnection;
-import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
-import com.velocitypowered.proxy.connection.client.ClientPlaySessionHandler;
-import com.velocitypowered.proxy.protocol.packet.BossBar;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
 import net.elytrium.limboapi.api.chunk.VirtualWorld;
 import net.elytrium.limboapi.api.player.LimboPlayer;
+import net.elytrium.limboreconnect.handler.ReconnectHandler;
+import net.elytrium.limboreconnect.listener.ReconnectListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
 import net.kyori.adventure.title.Title;
-import org.slf4j.Logger;
-import ru.skywatcher_2019.limboreconnect.handler.ReconnectHandler;
-import ru.skywatcher_2019.limboreconnect.listener.ReconnectListener;
 
 @Plugin(
     id = "limboreconnect",
@@ -62,7 +62,6 @@ import ru.skywatcher_2019.limboreconnect.listener.ReconnectListener;
 public class LimboReconnect {
 
   @Inject
-  private static Logger LOGGER;
   private static ComponentSerializer<Component, Component, String> SERIALIZER;
   private final ProxyServer server;
   private final File configFile;
@@ -78,9 +77,7 @@ public class LimboReconnect {
   private Component connectingSubtitleMessage;
 
   @Inject
-  public LimboReconnect(Logger logger, ProxyServer server, @DataDirectory Path dataDirectory) {
-    setLogger(logger);
-
+  public LimboReconnect(ProxyServer server, @DataDirectory Path dataDirectory) {
     this.server = server;
 
     File dataDirectoryFile = dataDirectory.toFile();
@@ -91,10 +88,6 @@ public class LimboReconnect {
 
   private static void setSerializer(ComponentSerializer<Component, Component, String> serializer) {
     SERIALIZER = serializer;
-  }
-
-  private static void setLogger(Logger logger) {
-    LOGGER = logger;
   }
 
   @Subscribe
@@ -119,7 +112,7 @@ public class LimboReconnect {
 
     this.server.getEventManager().register(this, new ReconnectListener(this));
 
-    startTask();
+    this.startTask();
   }
 
   private ProxyServer getServer() {
@@ -129,27 +122,30 @@ public class LimboReconnect {
   public void addPlayer(Player player, RegisteredServer server) {
     ConnectedPlayer connectedPlayer = (ConnectedPlayer) player;
     MinecraftConnection connection = connectedPlayer.getConnection();
-    if (connection.getSessionHandler() instanceof ClientPlaySessionHandler) {
-      ClientPlaySessionHandler sessionHandler = (ClientPlaySessionHandler) connection.getSessionHandler();
-      for (UUID bossBar : sessionHandler.getServerBossBars()) {
-        BossBar deletePacket = new BossBar();
-        deletePacket.setUuid(bossBar);
-        deletePacket.setAction(BossBar.REMOVE);
-        connectedPlayer.getConnection().delayedWrite(deletePacket);
+    MinecraftSessionHandler minecraftSessionHandler = connection.getSessionHandler();
+    if (minecraftSessionHandler != null) {
+      if (minecraftSessionHandler instanceof ClientPlaySessionHandler) {
+        ClientPlaySessionHandler sessionHandler = (ClientPlaySessionHandler) minecraftSessionHandler;
+        for (UUID bossBar : sessionHandler.getServerBossBars()) {
+          BossBar deletePacket = new BossBar();
+          deletePacket.setUuid(bossBar);
+          deletePacket.setAction(BossBar.REMOVE);
+          connectedPlayer.getConnection().delayedWrite(deletePacket);
+        }
+        sessionHandler.getServerBossBars().clear();
       }
-      sessionHandler.getServerBossBars().clear();
     }
 
     connectedPlayer.getTabList().clearAll();
 
     player.showTitle(Title.title(
-       this.offlineTitleMessage,
-       this.offlineSubtitleMessage,
-       Title.Times.times(
-          Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
-          Duration.ofDays(32),
-          Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
-       )
+        this.offlineTitleMessage,
+        this.offlineSubtitleMessage,
+        Title.Times.times(
+            Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
+            Duration.ofDays(32),
+            Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
+        )
     ));
 
     this.limbo.spawnPlayer(player, new ReconnectHandler(this, server));
@@ -176,13 +172,13 @@ public class LimboReconnect {
           player.getProxyPlayer().sendMessage(this.connectingMessage);
         }
         player.getProxyPlayer().showTitle(Title.title(
-           this.connectingTitleMessage,
-           this.connectingSubtitleMessage,
-           Title.Times.times(
-              Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
-              Duration.ofDays(32),
-              Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
-           )
+            this.connectingTitleMessage,
+            this.connectingSubtitleMessage,
+            Title.Times.times(
+                Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
+                Duration.ofDays(32),
+                Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
+            )
         ));
         player.disconnect(server);
       });

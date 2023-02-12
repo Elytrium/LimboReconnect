@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 SkyWatcher_2019
+ * Copyright (C) 2022 - 2023 Elytrium
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ru.skywatcher_2019.limboreconnect.listener;
+package net.elytrium.limboreconnect.listener;
 
 import com.velocitypowered.api.event.Subscribe;
+import java.util.Objects;
 import net.elytrium.limboapi.api.event.LoginLimboRegisterEvent;
+import net.elytrium.limboreconnect.Config;
+import net.elytrium.limboreconnect.LimboReconnect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import ru.skywatcher_2019.limboreconnect.Config;
-import ru.skywatcher_2019.limboreconnect.LimboReconnect;
-import java.util.Objects;
 
 public class ReconnectListener {
 
   public static final PlainTextComponentSerializer SERIALIZER = PlainTextComponentSerializer.builder().flattener(
-     ComponentFlattener.basic()
+      ComponentFlattener.basic()
   ).build();
 
   private final LimboReconnect plugin;

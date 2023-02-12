@@ -1,80 +1,105 @@
 plugins {
-  id 'java'
-  id 'eclipse'
-  id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.1"
-  id 'com.github.johnrengelman.shadow' version '7.1.2'
+  id("java")
+  id("checkstyle")
+  id("com.github.spotbugs").version("5.0.6")
+  id("org.cadixdev.licenser").version("0.6.1")
+  id("com.github.johnrengelman.shadow").version("7.1.2")
 }
 
-group = 'ru.skywatcher_2019'
-version = '1.1-SNAPSHOT'
+setGroup("net.elytrium")
+setVersion("1.1.1")
 
 compileJava {
   getOptions().setEncoding("UTF-8")
 }
 
+java {
+  setSourceCompatibility(JavaVersion.VERSION_11)
+  setTargetCompatibility(JavaVersion.VERSION_11)
+}
+
 repositories {
   mavenCentral()
+
   maven {
-    name = "elytrium-repo"
-    url = "https://maven.elytrium.net/repo/"
+    setName("elytrium-repo")
+    setUrl("https://maven.elytrium.net/repo/")
   }
   maven {
-    name = "papermc-repo"
-    url = "https://papermc.io/repo/repository/maven-public/"
+    setName("papermc-repo")
+    setUrl("https://papermc.io/repo/repository/maven-public/")
   }
 }
 
 dependencies {
-  compileOnly 'com.velocitypowered:velocity-api:3.1.2-SNAPSHOT'
-  compileOnly 'com.velocitypowered:velocity-proxy:3.1.2-SNAPSHOT'
-  compileOnly 'io.netty:netty-handler:4.1.86.Final'
-  annotationProcessor 'com.velocitypowered:velocity-api:3.1.2-SNAPSHOT'
-  implementation "net.elytrium.commons:config:1.2.1"
-  implementation "net.elytrium.commons:kyori:1.2.1"
-  compileOnly "net.elytrium.limboapi:api:1.1.0"
+  compileOnly("net.elytrium.limboapi:api:$limboapiVersion")
+  
+  compileOnly("com.velocitypowered:velocity-api:$velocityVersion")
+  compileOnly("com.velocitypowered:velocity-proxy:$velocityVersion")
+  compileOnly("io.netty:netty-handler:$nettyVersion")
+  annotationProcessor("com.velocitypowered:velocity-api:$velocityVersion")
 }
 
 shadowJar {
   getArchiveClassifier().set("")
+
+  relocate("net.elytrium.commons.velocity", "net.elytrium.limboapi.thirdparty.commons.velocity")
   relocate("net.elytrium.commons.kyori", "net.elytrium.limboapi.thirdparty.commons.kyori")
   relocate("net.elytrium.commons.config", "net.elytrium.limboapi.thirdparty.commons.config")
 }
 
-def targetJavaVersion = 11
-java {
-  def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-  sourceCompatibility = javaVersion
-  targetCompatibility = javaVersion
-  if (JavaVersion.current() < javaVersion) {
-    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+license {
+  setHeader(file("HEADER.txt"))
+}
+
+checkstyle {
+  setToolVersion("10.1")
+  setConfigFile(file("${this.getRootDir()}/config/checkstyle/checkstyle.xml"))
+  setConfigProperties("configDirectory": "${this.getRootDir()}/config/checkstyle")
+
+  // The build should immediately fail if we have errors.
+  setMaxErrors(0)
+  setMaxWarnings(0)
+}
+
+spotbugsMain {
+  setExcludeFilter(file("${this.getRootDir()}/config/spotbugs/suppressions.xml"))
+
+  reports {
+    html {
+      getRequired().set(true)
+      getOutputLocation().set(file("${this.getBuildDir()}/reports/spotbugs/main/spotbugs.html"))
+      setStylesheet("fancy-hist.xsl")
+    }
   }
 }
 
-tasks.withType(JavaCompile).configureEach {
-  if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-    options.release = targetJavaVersion
-  }
-}
-
-def templateSource = file('src/main/templates')
-def templateDest = layout.buildDirectory.dir('generated/sources/templates')
-def generateTemplates = tasks.register('generateTemplates', Copy) {task ->
-  def props = [
-      'version': project.version
-  ]
-  task.inputs.properties props
-
-  task.from templateSource
-  task.into templateDest
-  task.expand props
-}
-
-sourceSets.main.java.srcDir(
-    generateTemplates.map {
-      it.outputs
+sourceSets.main.getJava().srcDir(
+    getTasks().register("generateTemplates", Copy) {
+      task -> {
+        String version = getVersion().contains("-") ? "${getVersion()} (git-${getCurrentShortRevision()})" : getVersion()
+        task.getInputs().properties("version": version)
+        task.from(file("src/main/templates")).into(getLayout().getBuildDirectory().dir("generated/sources/templates"))
+        task.expand("version": version)
+      }
+    }.map {
+      it.getOutputs()
     }
 )
 
-rootProject.idea.project.settings.taskTriggers.afterSync generateTemplates
-project.eclipse.synchronizationTasks(generateTemplates)
 assemble.dependsOn(shadowJar)
+
+String getCurrentShortRevision() {
+  OutputStream outputStream = new ByteArrayOutputStream()
+  exec {
+    if (System.getProperty("os.name").toLowerCase().contains("win")) {
+      commandLine("cmd", "/c", "git rev-parse --short HEAD")
+    } else {
+      commandLine("bash", "-c", "git rev-parse --short HEAD")
+    }
+
+    setStandardOutput(outputStream)
+  }
+
+  return outputStream.toString().trim()
+}
