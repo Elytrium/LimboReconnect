@@ -86,11 +86,7 @@ public class Config extends YamlConfig {
     public static class TITLE_SETTINGS {
 
       @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
-      public int FADE_IN = 10;
-      @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
-      public int FADE_OUT = 20;
-      @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
-      public long DELAY = 20;
+      public long SHOW_DELAY = 20;
     }
 
     public List<TITLES> TITLES = List.of(new TITLES(), new TITLES(), new TITLES());
