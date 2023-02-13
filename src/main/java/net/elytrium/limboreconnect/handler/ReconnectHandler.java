@@ -18,9 +18,14 @@
 package net.elytrium.limboreconnect.handler;
 
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboSessionHandler;
 import net.elytrium.limboapi.api.player.LimboPlayer;
+import net.elytrium.limboreconnect.Config;
 import net.elytrium.limboreconnect.LimboReconnect;
 
 public class ReconnectHandler implements LimboSessionHandler {
@@ -28,6 +33,8 @@ public class ReconnectHandler implements LimboSessionHandler {
   private final LimboReconnect plugin;
   private final RegisteredServer server;
   private LimboPlayer player;
+  private boolean connected = true;
+  private int titleIndex = -1;
 
   public ReconnectHandler(LimboReconnect plugin, RegisteredServer server) {
     this.plugin = plugin;
@@ -38,11 +45,39 @@ public class ReconnectHandler implements LimboSessionHandler {
   public void onSpawn(Limbo server, LimboPlayer player) {
     this.player = player;
     this.player.disableFalling();
-    this.plugin.players.put(this.player, this.server);
+    this.tick();
+    this.tickMessages();
   }
 
   @Override
   public void onDisconnect() {
-    this.plugin.players.remove(this.player);
+    this.connected = false;
+  }
+
+  private void tick() {
+    try {
+      this.server.ping().get(Config.IMP.PING_TIMEOUT, TimeUnit.MILLISECONDS);
+    } catch (CompletionException | InterruptedException | ExecutionException | TimeoutException e) {
+
+      this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
+      return;
+    }
+
+    if (!Config.IMP.MESSAGES.CONNECTING.isEmpty()) {
+      this.player.getProxyPlayer().sendMessage(this.plugin.getConnectingMessage());
+    }
+
+    this.player.disconnect(this.server);
+  }
+
+  private void tickMessages() {
+    if (++this.titleIndex == this.plugin.getOfflineTitles().size()) {
+      this.titleIndex = 0;
+    }
+    this.player.getProxyPlayer().showTitle(this.plugin.getOfflineTitles().get(this.titleIndex));
+
+    if (this.connected) {
+      this.player.getScheduledExecutor().schedule(this::tickMessages, Config.IMP.MESSAGES.TITLE_SETTINGS.DELAY * 50, TimeUnit.MILLISECONDS);
+    }
   }
 }

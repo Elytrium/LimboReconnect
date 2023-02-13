@@ -17,8 +17,10 @@
 
 package net.elytrium.limboreconnect;
 
+import java.util.List;
 import net.elytrium.commons.config.YamlConfig;
 import net.elytrium.commons.kyori.serialization.Serializers;
+import net.elytrium.limboapi.api.file.BuiltInWorldFileType;
 
 public class Config extends YamlConfig {
 
@@ -42,11 +44,11 @@ public class Config extends YamlConfig {
   public long CHECK_INTERVAL = 1000;
   @Comment("Server status check timeout in milliseconds")
   public long PING_TIMEOUT = 500;
+  @Comment("Send to limbo or use current server's world")
+  public boolean USE_LIMBO = false;
 
   @Create
   public WORLD WORLD;
-  @Create
-  public TITLE TITLE;
   @Create
   public MESSAGES MESSAGES;
 
@@ -56,32 +58,47 @@ public class Config extends YamlConfig {
         "Dimensions: OVERWORLD, NETHER, THE_END"
     )
     public String DIMENSION = "OVERWORLD";
-  }
+    public boolean LOAD_WORLD = false;
+    public String WORLD_FILE_PATH = "world.schem";
+    public BuiltInWorldFileType WORLD_FILE_TYPE = BuiltInWorldFileType.WORLDEDIT_SCHEM;
+    public int WORLD_LIGHT_LEVEL = 15;
 
-  public static class TITLE {
+    @Create
+    public WORLD_COORDS WORLD_COORDS;
 
-    @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
-    public int FADE_IN = 10;
-    @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
-    public int FADE_OUT = 20;
+    public static class WORLD_COORDS {
+
+      public int X = 0;
+      public int Y = 0;
+      public int Z = 0;
+    }
   }
 
   @Comment("Empty messages will not be sent")
   public static class MESSAGES {
 
-    public String SERVER_OFFLINE = "<red>Server is restarting, please wait...";
     public String CONNECTING = "<aqua>Connecting to the server...";
+    public String RELOAD = "<green>LimboReconnect reloaded";
 
     @Create
-    public TITLE TITLE;
+    public TITLE_SETTINGS TITLE_SETTINGS;
 
-    public static class TITLE {
+    public static class TITLE_SETTINGS {
 
-      public String OFFLINE_TITLE = "";
-      public String OFFLINE_SUBTITLE = "<red>Server is restarting, please wait...";
+      @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
+      public int FADE_IN = 10;
+      @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
+      public int FADE_OUT = 20;
+      @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
+      public long DELAY = 20;
+    }
 
-      public String CONNECTING_TITLE = "";
-      public String CONNECTING_SUBTITLE = "<aqua>Connecting to the server...";
+    public List<TITLES> TITLES = List.of(new TITLES(), new TITLES(), new TITLES());
+
+    public static class TITLES {
+
+      public String TITLE = "Server is restarting...";
+      public String SUBTITLE = "Please vait...";
     }
   }
 }

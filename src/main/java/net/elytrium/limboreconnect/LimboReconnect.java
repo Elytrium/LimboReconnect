@@ -26,27 +26,23 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.client.ClientPlaySessionHandler;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.packet.BossBar;
-import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
 import net.elytrium.limboapi.api.chunk.VirtualWorld;
-import net.elytrium.limboapi.api.player.LimboPlayer;
+import net.elytrium.limboapi.api.file.WorldFile;
+import net.elytrium.limboreconnect.commands.LimboReconnectCommand;
 import net.elytrium.limboreconnect.handler.ReconnectHandler;
 import net.elytrium.limboreconnect.listener.ReconnectListener;
 import net.kyori.adventure.text.Component;
@@ -60,28 +56,22 @@ import net.kyori.adventure.title.Title;
     authors = {"SkyWatcher_2019", "hevav"}
 )
 public class LimboReconnect {
-
   @Inject
   private static ComponentSerializer<Component, Component, String> SERIALIZER;
   private final ProxyServer server;
-  private final File configFile;
+  private final Path configPath;
+  private final Path dataDirectory;
   private final LimboFactory factory;
-  public Map<LimboPlayer, RegisteredServer> players = new ConcurrentHashMap<>();
   private Limbo limbo;
-  private ScheduledTask limboTask;
-  private Component offlineServerMessage;
   private Component connectingMessage;
-  private Component offlineTitleMessage;
-  private Component offlineSubtitleMessage;
-  private Component connectingTitleMessage;
-  private Component connectingSubtitleMessage;
+  private final List<Title> offlineTitles = new ArrayList<>();
 
   @Inject
   public LimboReconnect(ProxyServer server, @DataDirectory Path dataDirectory) {
     this.server = server;
 
-    File dataDirectoryFile = dataDirectory.toFile();
-    this.configFile = new File(dataDirectoryFile, "config.yml");
+    this.dataDirectory = dataDirectory;
+    this.configPath = dataDirectory.resolve("config.yml");
 
     this.factory = (LimboFactory) this.server.getPluginManager().getPlugin("limboapi").flatMap(PluginContainer::getInstance).orElseThrow();
   }
@@ -96,27 +86,43 @@ public class LimboReconnect {
   }
 
   public void reload() {
-    Config.IMP.reload(this.configFile);
+    Config.IMP.reload(this.configPath);
 
     setSerializer(Config.IMP.SERIALIZER.getSerializer());
 
     VirtualWorld world = this.factory.createVirtualWorld(Dimension.valueOf(Config.IMP.WORLD.DIMENSION), 0, 100, 0, (float) 90, (float) 0.0);
-    this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000);
 
-    this.offlineServerMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.SERVER_OFFLINE);
+    if (Config.IMP.WORLD.LOAD_WORLD) {
+      try {
+        Path path = this.dataDirectory.resolve(Config.IMP.WORLD.WORLD_FILE_PATH);
+        WorldFile file = this.factory.openWorldFile(Config.IMP.WORLD.WORLD_FILE_TYPE, path);
+
+        Config.WORLD.WORLD_COORDS coords = Config.IMP.WORLD.WORLD_COORDS;
+        file.toWorld(this.factory, world, coords.X, coords.Y, coords.Z, Config.IMP.WORLD.WORLD_LIGHT_LEVEL);
+      } catch (IOException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+
+    this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000).setShouldRejoin(Config.IMP.USE_LIMBO)
+        .setShouldRespawn(Config.IMP.USE_LIMBO);
+
+    Config.IMP.MESSAGES.TITLES.forEach(title -> this.offlineTitles.add(Title.title(
+        SERIALIZER.deserialize(title.TITLE),
+        SERIALIZER.deserialize(title.SUBTITLE),
+        Title.Times.times(
+            Duration.ofMillis(Config.IMP.MESSAGES.TITLE_SETTINGS.FADE_IN * 50L),
+            Duration.ofDays(32),
+            Duration.ofMillis(Config.IMP.MESSAGES.TITLE_SETTINGS.FADE_OUT * 50L)
+        )
+    )));
+
     this.connectingMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.CONNECTING);
-    this.offlineTitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.OFFLINE_TITLE);
-    this.offlineSubtitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.OFFLINE_SUBTITLE);
-    this.connectingTitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.CONNECTING_TITLE);
-    this.connectingSubtitleMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.TITLE.CONNECTING_SUBTITLE);
 
+    this.server.getEventManager().unregisterListeners(this);
     this.server.getEventManager().register(this, new ReconnectListener(this));
-
-    this.startTask();
-  }
-
-  private ProxyServer getServer() {
-    return this.server;
+    this.server.getCommandManager().unregister("limboreconnect");
+    this.server.getCommandManager().register("limboreconnect", new LimboReconnectCommand(this));
   }
 
   public void addPlayer(Player player, RegisteredServer server) {
@@ -137,51 +143,18 @@ public class LimboReconnect {
     }
 
     connectedPlayer.getTabList().clearAll();
-
-    player.showTitle(Title.title(
-        this.offlineTitleMessage,
-        this.offlineSubtitleMessage,
-        Title.Times.times(
-            Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
-            Duration.ofDays(32),
-            Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
-        )
-    ));
-
     this.limbo.spawnPlayer(player, new ReconnectHandler(this, server));
   }
 
-  private void startTask() {
-    if (this.limboTask != null) {
-      this.limboTask.cancel();
-    }
-    this.limboTask = this.getServer().getScheduler().buildTask(this, () -> {
-      if (this.players.isEmpty()) {
-        return;
-      }
-      this.players.forEach((player, server) -> {
-        try {
-          server.ping().get(Config.IMP.PING_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (CompletionException | InterruptedException | ExecutionException | TimeoutException e) {
-          if (!Config.IMP.MESSAGES.SERVER_OFFLINE.isEmpty()) {
-            player.getProxyPlayer().sendMessage(this.offlineServerMessage);
-          }
-          return;
-        }
-        if (!Config.IMP.MESSAGES.CONNECTING.isEmpty()) {
-          player.getProxyPlayer().sendMessage(this.connectingMessage);
-        }
-        player.getProxyPlayer().showTitle(Title.title(
-            this.connectingTitleMessage,
-            this.connectingSubtitleMessage,
-            Title.Times.times(
-                Duration.ofMillis(Config.IMP.TITLE.FADE_IN * 50L),
-                Duration.ofDays(32),
-                Duration.ofMillis(Config.IMP.TITLE.FADE_OUT * 50L)
-            )
-        ));
-        player.disconnect(server);
-      });
-    }).repeat(Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS).schedule();
+  public Component getConnectingMessage() {
+    return this.connectingMessage;
+  }
+
+  public List<Title> getOfflineTitles() {
+    return this.offlineTitles;
+  }
+
+  public static ComponentSerializer<Component, Component, String> getSerializer() {
+    return SERIALIZER;
   }
 }
