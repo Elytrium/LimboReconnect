@@ -107,13 +107,14 @@ public class LimboReconnect {
     this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000).setShouldRejoin(Config.IMP.USE_LIMBO)
         .setShouldRespawn(Config.IMP.USE_LIMBO);
 
+    this.offlineTitles.clear();
     Config.IMP.MESSAGES.TITLES.forEach(title -> this.offlineTitles.add(Title.title(
         SERIALIZER.deserialize(title.TITLE),
         SERIALIZER.deserialize(title.SUBTITLE),
         Title.Times.times(
-            Duration.ofMillis(Config.IMP.MESSAGES.TITLE_SETTINGS.FADE_IN * 50L),
-            Duration.ofDays(32),
-            Duration.ofMillis(Config.IMP.MESSAGES.TITLE_SETTINGS.FADE_OUT * 50L)
+            Duration.ofMillis(0),
+            Duration.ofMillis(1000),
+            Duration.ofMillis(0)
         )
     )));
 
