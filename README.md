@@ -38,3 +38,11 @@ Reconnect your players back after server restart. Built with ([**LimboAPI**](htt
 
 - Latest [**Velocity**](https://velocitypowered.com)
 - Latest [**LimboAPI**](https://github.com/Elytrium/LimboAPI)
+
+## Donation
+
+Your donations are really appreciated. Donations wallets/links/cards:
+
+- MasterCard Debit Card (Tinkoff Bank): ``5536 9141 6466 0510``
+- MasterCard Debit Card (Sberbank Bank): ``4276 3000 6031 8139``
+- Qiwi Wallet: [Link](https://qiwi.com/n/SKYWATCHER2019)
