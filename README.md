@@ -19,12 +19,9 @@ Reconnect your players back after server restart. Built with ([**LimboAPI**](htt
 
 - Reconnect all players when a server restarts;
 - Supports definition of custom kick trigger messages with [**regex**](https://en.wikipedia.org/wiki/Regular_expression) support;
-- Configuration reload command;
 - Send configurable [**Title**](https://minecraft.fandom.com/wiki/Commands/title) messages;
-- Prevent Players from being kicked to lobby;
 - [**Minecraft Formatting**](https://www.digminecraft.com/lists/color_list_pc.php) support;
 - [**MiniMessage Formatting**](https://docs.adventure.kyori.net/minimessage/format.html) support;
-- [**Hex Color Formatting**](https://htmlcolorcodes.com/color-picker/) support;
 - And more...
 
 ## Commands and permissions
