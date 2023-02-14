@@ -37,11 +37,13 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
 import net.elytrium.limboapi.api.chunk.VirtualWorld;
 import net.elytrium.limboapi.api.file.WorldFile;
+import net.elytrium.limboapi.api.player.GameMode;
 import net.elytrium.limboreconnect.commands.LimboReconnectCommand;
 import net.elytrium.limboreconnect.handler.ReconnectHandler;
 import net.elytrium.limboreconnect.listener.ReconnectListener;
@@ -105,10 +107,10 @@ public class LimboReconnect {
     }
 
     this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000).setShouldRejoin(Config.IMP.USE_LIMBO)
-        .setShouldRespawn(Config.IMP.USE_LIMBO);
+        .setShouldRespawn(Config.IMP.USE_LIMBO).setGameMode(GameMode.valueOf(Config.IMP.WORLD.GAME_MODE));
 
     this.offlineTitles.clear();
-    Config.IMP.MESSAGES.TITLES.forEach(title -> this.offlineTitles.add(Title.title(
+    Config.IMP.MESSAGES.RESTART_MESSAGES.forEach(title -> this.offlineTitles.add(Title.title(
         SERIALIZER.deserialize(title.TITLE),
         SERIALIZER.deserialize(title.SUBTITLE),
         Title.Times.times(
@@ -117,6 +119,10 @@ public class LimboReconnect {
             Duration.ofMillis(0)
         )
     )));
+
+    Config.IMP.MESSAGES.RESTART_MESSAGES.forEach(actionbar -> this.server.sendActionBar(
+            SERIALIZER.deserialize(actionbar.ACTIONBAR)
+    ));
 
     this.connectingMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.CONNECTING);
 
@@ -131,8 +137,7 @@ public class LimboReconnect {
     MinecraftConnection connection = connectedPlayer.getConnection();
     MinecraftSessionHandler minecraftSessionHandler = connection.getSessionHandler();
     if (minecraftSessionHandler != null) {
-      if (minecraftSessionHandler instanceof ClientPlaySessionHandler) {
-        ClientPlaySessionHandler sessionHandler = (ClientPlaySessionHandler) minecraftSessionHandler;
+      if (minecraftSessionHandler instanceof ClientPlaySessionHandler sessionHandler) {
         for (UUID bossBar : sessionHandler.getServerBossBars()) {
           BossBar deletePacket = new BossBar();
           deletePacket.setUuid(bossBar);

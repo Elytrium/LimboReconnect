@@ -58,6 +58,10 @@ public class Config extends YamlConfig {
         "Dimensions: OVERWORLD, NETHER, THE_END"
     )
     public String DIMENSION = "OVERWORLD";
+    @Comment(
+        "Available: ADVENTURE, CREATIVE, SURVIVAL, SPECTATOR"
+    )
+    public String GAME_MODE = "ADVENTURE";
     public boolean LOAD_WORLD = false;
     public String WORLD_FILE_PATH = "world.schem";
     public BuiltInWorldFileType WORLD_FILE_TYPE = BuiltInWorldFileType.WORLDEDIT_SCHEM;
@@ -81,20 +85,21 @@ public class Config extends YamlConfig {
     public String RELOAD = "<green>LimboReconnect reloaded";
 
     @Create
-    public TITLE_SETTINGS TITLE_SETTINGS;
+    public RESTART_MESSAGES_SETTINGS RESTART_MESSAGES_SETTINGS;
 
-    public static class TITLE_SETTINGS {
+    public static class RESTART_MESSAGES_SETTINGS {
 
       @Comment(value = "time in ticks", at = Comment.At.SAME_LINE)
       public long SHOW_DELAY = 20;
     }
 
-    public List<TITLES> TITLES = List.of(new TITLES(), new TITLES(), new TITLES());
+    public List<RESTART_MESSAGES> RESTART_MESSAGES = List.of(new RESTART_MESSAGES(), new RESTART_MESSAGES(), new RESTART_MESSAGES());
 
-    public static class TITLES {
+    public static class RESTART_MESSAGES {
 
       public String TITLE = "Server is restarting...";
       public String SUBTITLE = "Please vait...";
+      public String ACTIONBAR = "";
     }
   }
 }
