@@ -77,7 +77,9 @@ public class ReconnectHandler implements LimboSessionHandler {
     this.player.getProxyPlayer().showTitle(this.plugin.getOfflineTitles().get(this.titleIndex));
 
     if (this.connected) {
-      this.player.getScheduledExecutor().schedule(this::tickMessages, Config.IMP.MESSAGES.RESTART_MESSAGES_SETTINGS.SHOW_DELAY*50, TimeUnit.MILLISECONDS);
+       .schedule(this::tickMessages,
+         Config.IMP.MESSAGES.RESTART_MESSAGES_SETTINGS.SHOW_DELAY * 50,
+         TimeUnit.MILLISECONDS);
     }
   }
 }
