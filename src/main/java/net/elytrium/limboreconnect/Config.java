@@ -94,7 +94,7 @@ public class Config extends YamlConfig {
     public static class TITLES {
 
       public String TITLE = "Server is restarting...";
-      public String SUBTITLE = "Please vait...";
+      public String SUBTITLE = "Please wait...";
     }
   }
 }

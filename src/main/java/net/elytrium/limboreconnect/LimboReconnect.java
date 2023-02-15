@@ -70,6 +70,12 @@ public class LimboReconnect {
   public LimboReconnect(ProxyServer server, @DataDirectory Path dataDirectory) {
     this.server = server;
 
+    try {
+      Class.forName("com.velocitypowered.api.proxy.server.PingOptions");
+    } catch (Throwable throwable) {
+      throw new UnsupportedOperationException("You are using outdated velocity build! Please update velocity to build #224+");
+    }
+
     this.dataDirectory = dataDirectory;
     this.configPath = dataDirectory.resolve("config.yml");
 
@@ -113,7 +119,7 @@ public class LimboReconnect {
         SERIALIZER.deserialize(title.SUBTITLE),
         Title.Times.times(
             Duration.ofMillis(0),
-            Duration.ofMillis(1000),
+            Duration.ofMillis(1000 * 30),
             Duration.ofMillis(0)
         )
     )));
