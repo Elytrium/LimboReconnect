@@ -78,7 +78,7 @@ public class ReconnectHandler implements LimboSessionHandler {
       return;
     }
 
-    this.titleIndex = this.titleIndex + 1 % this.plugin.getOfflineTitles().size();
+    this.titleIndex = (this.titleIndex + 1) % this.plugin.getOfflineTitles().size();
     this.player.getProxyPlayer().showTitle(this.plugin.getOfflineTitles().get(this.titleIndex));
     this.player.getScheduledExecutor().schedule(this::tickMessages, Config.IMP.MESSAGES.TITLE_SETTINGS.SHOW_DELAY * 50, TimeUnit.MILLISECONDS);
   }
