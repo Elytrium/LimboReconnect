@@ -17,11 +17,10 @@
 
 package net.elytrium.limboreconnect.handler;
 
+import com.velocitypowered.api.proxy.server.PingOptions;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboSessionHandler;
 import net.elytrium.limboapi.api.player.LimboPlayer;
@@ -55,29 +54,32 @@ public class ReconnectHandler implements LimboSessionHandler {
   }
 
   private void tick() {
-    try {
-      this.server.ping().get(Config.IMP.PING_TIMEOUT, TimeUnit.MILLISECONDS);
-    } catch (CompletionException | InterruptedException | ExecutionException | TimeoutException e) {
+    PingOptions.Builder options = PingOptions.builder();
+    options.timeout(Duration.ofMillis(Config.IMP.PING_TIMEOUT));
 
-      this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
-      return;
-    }
+    this.server.ping(options.build()).whenComplete((ping, exception) -> {
+      if (exception != null) {
+        this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
+      } else {
+        this.player.getScheduledExecutor().execute(() -> {
+          this.player.getProxyPlayer().resetTitle();
+          if (!Config.IMP.MESSAGES.CONNECTING.isEmpty()) {
+            this.player.getProxyPlayer().sendMessage(this.plugin.getConnectingMessage());
+          }
 
-    if (!Config.IMP.MESSAGES.CONNECTING.isEmpty()) {
-      this.player.getProxyPlayer().sendMessage(this.plugin.getConnectingMessage());
-    }
-
-    this.player.disconnect(this.server);
+          this.player.disconnect(this.server);
+        });
+      }
+    });
   }
 
   private void tickMessages() {
-    if (++this.titleIndex == this.plugin.getOfflineTitles().size()) {
-      this.titleIndex = 0;
+    if (!this.connected) {
+      return;
     }
-    this.player.getProxyPlayer().showTitle(this.plugin.getOfflineTitles().get(this.titleIndex));
 
-    if (this.connected) {
-      this.player.getScheduledExecutor().schedule(this::tickMessages, Config.IMP.MESSAGES.TITLE_SETTINGS.SHOW_DELAY * 50, TimeUnit.MILLISECONDS);
-    }
+    this.titleIndex = this.titleIndex + 1 % this.plugin.getOfflineTitles().size();
+    this.player.getProxyPlayer().showTitle(this.plugin.getOfflineTitles().get(this.titleIndex));
+    this.player.getScheduledExecutor().schedule(this::tickMessages, Config.IMP.MESSAGES.TITLE_SETTINGS.SHOW_DELAY * 50, TimeUnit.MILLISECONDS);
   }
 }
