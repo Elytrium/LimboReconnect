@@ -44,6 +44,8 @@ public class Config extends YamlConfig {
   public long CHECK_INTERVAL = 1000;
   @Comment("Server status check timeout in milliseconds")
   public long PING_TIMEOUT = 500;
+  @Comment("Delay from returning players from limbo back to their servers in milliseconds")
+  public long JOIN_DELAY = 500;
   @Comment("Send to limbo or use current server's world")
   public boolean USE_LIMBO = false;
 
@@ -51,6 +53,7 @@ public class Config extends YamlConfig {
   public WORLD WORLD;
   @Create
   public MESSAGES MESSAGES;
+  public boolean DEBUG = false;
 
   public static class WORLD {
 
@@ -58,6 +61,7 @@ public class Config extends YamlConfig {
         "Dimensions: OVERWORLD, NETHER, THE_END"
     )
     public String DIMENSION = "OVERWORLD";
+    @Comment("Load world from file")
     public boolean LOAD_WORLD = false;
     public String WORLD_FILE_PATH = "world.schem";
     public BuiltInWorldFileType WORLD_FILE_TYPE = BuiltInWorldFileType.WORLDEDIT_SCHEM;

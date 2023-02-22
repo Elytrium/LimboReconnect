@@ -48,6 +48,7 @@ import net.elytrium.limboreconnect.listener.ReconnectListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
 import net.kyori.adventure.title.Title;
+import org.slf4j.Logger;
 
 @Plugin(
     id = "limboreconnect",
@@ -57,17 +58,19 @@ import net.kyori.adventure.title.Title;
 )
 public class LimboReconnect {
   @Inject
+  private static Logger LOGGER;
   private static ComponentSerializer<Component, Component, String> SERIALIZER;
   private final ProxyServer server;
   private final Path configPath;
   private final Path dataDirectory;
   private final LimboFactory factory;
+  private final List<Title> offlineTitles = new ArrayList<>();
   private Limbo limbo;
   private Component connectingMessage;
-  private final List<Title> offlineTitles = new ArrayList<>();
 
   @Inject
-  public LimboReconnect(ProxyServer server, @DataDirectory Path dataDirectory) {
+  public LimboReconnect(Logger logger, ProxyServer server, @DataDirectory Path dataDirectory) {
+    setLogger(logger);
     this.server = server;
 
     try {
@@ -163,5 +166,14 @@ public class LimboReconnect {
 
   public static ComponentSerializer<Component, Component, String> getSerializer() {
     return SERIALIZER;
+  }
+
+
+  public static Logger getLogger() {
+    return LOGGER;
+  }
+
+  private static void setLogger(Logger logger) {
+    LOGGER = logger;
   }
 }

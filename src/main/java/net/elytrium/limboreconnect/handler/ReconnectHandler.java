@@ -44,7 +44,7 @@ public class ReconnectHandler implements LimboSessionHandler {
   public void onSpawn(Limbo server, LimboPlayer player) {
     this.player = player;
     this.player.disableFalling();
-    this.tick();
+    this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
     this.tickMessages();
   }
 
@@ -59,6 +59,11 @@ public class ReconnectHandler implements LimboSessionHandler {
 
     this.server.ping(options.build()).whenComplete((ping, exception) -> {
       if (exception != null) {
+        if (Config.IMP.DEBUG) {
+          LimboReconnect.getLogger()
+              .info("{} can't ping {}", this.player.getProxyPlayer().getGameProfile().getName(), this.server.getServerInfo().getName());
+        }
+
         this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
       } else {
         this.player.getScheduledExecutor().execute(() -> {
@@ -67,7 +72,7 @@ public class ReconnectHandler implements LimboSessionHandler {
             this.player.getProxyPlayer().sendMessage(this.plugin.getConnectingMessage());
           }
 
-          this.player.disconnect(this.server);
+          this.player.getScheduledExecutor().schedule(() -> this.player.disconnect(this.server), Config.IMP.JOIN_DELAY, TimeUnit.MILLISECONDS);
         });
       }
     });
