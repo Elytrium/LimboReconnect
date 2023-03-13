@@ -50,7 +50,7 @@ public class ReconnectListener {
         LimboReconnect.getLogger().info("Match: {}", kickMessage.matches(Config.IMP.RESTART_MESSAGE));
       }
 
-      if (kickMessage.equals("velocity.error.internal-server-connection-error") || kickMessage.matches(Config.IMP.RESTART_MESSAGE)) {
+      if (kickMessage.equals("") || kickMessage.matches(Config.IMP.RESTART_MESSAGE)) {
         this.plugin.addPlayer(kickEvent.getPlayer(), kickEvent.getServer());
         return true;
       } else {

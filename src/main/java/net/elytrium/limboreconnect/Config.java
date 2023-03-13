@@ -38,7 +38,7 @@ public class Config extends YamlConfig {
   public Serializers SERIALIZER = Serializers.MINIMESSAGE;
 
   @Comment("Send player to the limbo, if disconnect reason contains this text (using regex)")
-  public String RESTART_MESSAGE = "((?i)^(server closed|multiplayer\\.disconnect\\.server_shutdown|server is restarting))+$";
+  public String RESTART_MESSAGE = "((?i)^(server closed|multiplayer\\.disconnect\\.server_shutdown|velocity\\.error\\.internal-server-connection-error|server is restarting))+$";
 
   @Comment("Server status check interval in milliseconds")
   public long CHECK_INTERVAL = 1000;
