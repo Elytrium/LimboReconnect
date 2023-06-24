@@ -54,7 +54,6 @@ public class ReconnectListener {
         this.plugin.addPlayer(kickEvent.getPlayer(), kickEvent.getServer());
         return true;
       } else {
-        kickEvent.getPlayer().disconnect(kickReason);
         return false;
       }
     });

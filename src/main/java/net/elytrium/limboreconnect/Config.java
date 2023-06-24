@@ -21,6 +21,7 @@ import java.util.List;
 import net.elytrium.commons.config.YamlConfig;
 import net.elytrium.commons.kyori.serialization.Serializers;
 import net.elytrium.limboapi.api.file.BuiltInWorldFileType;
+import net.elytrium.limboapi.api.player.GameMode;
 
 public class Config extends YamlConfig {
 
@@ -66,6 +67,7 @@ public class Config extends YamlConfig {
     public String WORLD_FILE_PATH = "world.schem";
     public BuiltInWorldFileType WORLD_FILE_TYPE = BuiltInWorldFileType.WORLDEDIT_SCHEM;
     public int WORLD_LIGHT_LEVEL = 15;
+    public GameMode GAMEMODE = GameMode.SPECTATOR;
 
     @Create
     public WORLD_COORDS WORLD_COORDS;

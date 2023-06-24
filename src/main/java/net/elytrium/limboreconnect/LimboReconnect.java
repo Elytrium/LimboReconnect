@@ -113,8 +113,8 @@ public class LimboReconnect {
       }
     }
 
-    this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setWorldTime(6000).setShouldRejoin(Config.IMP.USE_LIMBO)
-        .setShouldRespawn(Config.IMP.USE_LIMBO);
+    this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setShouldRejoin(Config.IMP.USE_LIMBO)
+        .setShouldRespawn(Config.IMP.USE_LIMBO).setGameMode(Config.IMP.WORLD.GAMEMODE);
 
     this.offlineTitles.clear();
     Config.IMP.MESSAGES.TITLES.forEach(title -> this.offlineTitles.add(Title.title(

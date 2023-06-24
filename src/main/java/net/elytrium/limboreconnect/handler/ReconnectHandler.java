@@ -44,6 +44,7 @@ public class ReconnectHandler implements LimboSessionHandler {
   public void onSpawn(Limbo server, LimboPlayer player) {
     this.player = player;
     this.player.disableFalling();
+    this.player.setGameMode(Config.IMP.WORLD.GAMEMODE);
     this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
     this.tickMessages();
   }
