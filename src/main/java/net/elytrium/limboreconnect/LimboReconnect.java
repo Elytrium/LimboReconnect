@@ -111,6 +111,11 @@ public class LimboReconnect {
   public void reload() {
     CONFIG.reload(this.configPath);
 
+    if (CONFIG.triggerMessage.equals("((?i)^(server closed|server is restarting|multiplayer\\.disconnect\\.server_shutdown))+$")) {
+      LOGGER.warn("Looks like you using default config!");
+      LOGGER.warn("Please check 'trigger-message' option and confirm, that it matches your server's restart message");
+    }
+
     setSerializer(CONFIG.serializer.getSerializer());
 
     Config.World.PlayerCoords playerCoords = CONFIG.world.playerCoords;
