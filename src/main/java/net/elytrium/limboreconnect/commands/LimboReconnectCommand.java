@@ -33,10 +33,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 public class LimboReconnectCommand implements SimpleCommand {
 
-  private static final List<Component> HELP_MESSAGE = List.of(
-      Component.text("This server is using LimboReconnect and LimboAPI.", NamedTextColor.YELLOW),
-      Component.text("(C) 2022 - 2023 Elytrium", NamedTextColor.YELLOW),
-      Component.text("https://elytrium.net/github/", NamedTextColor.GREEN),
+  private static final List<Component> HELP_MESSAGE = List.of(Component.text("This server is using LimboReconnect and LimboAPI.", NamedTextColor.YELLOW),
+      Component.text("(C) 2022 - 2023 Elytrium", NamedTextColor.YELLOW), Component.text("https://elytrium.net/github/", NamedTextColor.GREEN),
       Component.empty()
   );
 
@@ -55,17 +53,11 @@ public class LimboReconnectCommand implements SimpleCommand {
     String[] args = invocation.arguments();
 
     if (args.length == 0) {
-      return Arrays.stream(Subcommand.values())
-          .filter(command -> command.hasPermission(source))
-          .map(Subcommand::getCommand)
-          .collect(Collectors.toList());
+      return Arrays.stream(Subcommand.values()).filter(command -> command.hasPermission(source)).map(Subcommand::getCommand).collect(Collectors.toList());
     } else if (args.length == 1) {
       String argument = args[0];
-      return Arrays.stream(Subcommand.values())
-          .filter(command -> command.hasPermission(source))
-          .map(Subcommand::getCommand)
-          .filter(str -> str.regionMatches(true, 0, argument, 0, argument.length()))
-          .collect(Collectors.toList());
+      return Arrays.stream(Subcommand.values()).filter(command -> command.hasPermission(source)).map(Subcommand::getCommand)
+          .filter(str -> str.regionMatches(true, 0, argument, 0, argument.length())).collect(Collectors.toList());
     } else {
       return ImmutableList.of();
     }
@@ -102,8 +94,7 @@ public class LimboReconnectCommand implements SimpleCommand {
   private void showHelp(CommandSource source) {
     HELP_MESSAGE.forEach(source::sendMessage);
 
-    List<Subcommand> availableSubcommands = Arrays.stream(Subcommand.values())
-        .filter(command -> command.hasPermission(source))
+    List<Subcommand> availableSubcommands = Arrays.stream(Subcommand.values()).filter(command -> command.hasPermission(source))
         .collect(Collectors.toList());
 
     if (availableSubcommands.size() > 0) {
@@ -115,13 +106,10 @@ public class LimboReconnectCommand implements SimpleCommand {
   }
 
   private enum Subcommand {
-    RELOAD(
-        "Reload config.",
-        (LimboReconnectCommand parent, CommandSource source, String[] args) -> {
-          parent.plugin.reload();
-          source.sendMessage(LimboReconnect.getSerializer().deserialize(CONFIG.messages.reload));
-        }
-    );
+    RELOAD("Reload config.", (LimboReconnectCommand parent, CommandSource source, String[] args) -> {
+      parent.plugin.reload();
+      source.sendMessage(LimboReconnect.getSerializer().deserialize(CONFIG.messages.reload));
+    });
 
     private final String command;
     private final String description;
@@ -138,10 +126,8 @@ public class LimboReconnectCommand implements SimpleCommand {
     }
 
     public Component getMessageLine() {
-      return Component.textOfChildren(
-          Component.text("  /limboreconnect " + this.command, NamedTextColor.GREEN),
-          Component.text(" - ", NamedTextColor.DARK_GRAY),
-          Component.text(this.description, NamedTextColor.YELLOW)
+      return Component.textOfChildren(Component.text("  /limboreconnect " + this.command, NamedTextColor.GREEN),
+          Component.text(" - ", NamedTextColor.DARK_GRAY), Component.text(this.description, NamedTextColor.YELLOW)
       );
     }
 
