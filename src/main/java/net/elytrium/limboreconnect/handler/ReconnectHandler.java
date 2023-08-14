@@ -17,6 +17,8 @@
 
 package net.elytrium.limboreconnect.handler;
 
+import static net.elytrium.limboreconnect.LimboReconnect.CONFIG;
+
 import com.velocitypowered.api.proxy.server.PingOptions;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import java.time.Duration;
@@ -24,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboSessionHandler;
 import net.elytrium.limboapi.api.player.LimboPlayer;
-import net.elytrium.limboreconnect.Config;
 import net.elytrium.limboreconnect.LimboReconnect;
 
 public class ReconnectHandler implements LimboSessionHandler {
@@ -33,6 +34,7 @@ public class ReconnectHandler implements LimboSessionHandler {
   private final RegisteredServer server;
   private LimboPlayer player;
   private boolean connected = true;
+  private boolean connecting = false;
   private int titleIndex = -1;
 
   public ReconnectHandler(LimboReconnect plugin, RegisteredServer server) {
@@ -44,8 +46,8 @@ public class ReconnectHandler implements LimboSessionHandler {
   public void onSpawn(Limbo server, LimboPlayer player) {
     this.player = player;
     this.player.disableFalling();
-    this.player.setGameMode(Config.IMP.WORLD.GAMEMODE);
-    this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
+    this.player.setGameMode(CONFIG.world.gamemode);
+    this.player.getScheduledExecutor().schedule(this::tick, CONFIG.checkInterval, TimeUnit.MILLISECONDS);
     this.tickMessages();
   }
 
@@ -55,25 +57,29 @@ public class ReconnectHandler implements LimboSessionHandler {
   }
 
   private void tick() {
+    if (!this.connected) {
+      return;
+    }
+
     PingOptions.Builder options = PingOptions.builder();
-    options.timeout(Duration.ofMillis(Config.IMP.PING_TIMEOUT));
+    options.timeout(Duration.ofMillis(CONFIG.pingTimeout));
 
     this.server.ping(options.build()).whenComplete((ping, exception) -> {
       if (exception != null) {
-        if (Config.IMP.DEBUG) {
+        if (CONFIG.debug) {
           LimboReconnect.getLogger()
               .info("{} can't ping {}", this.player.getProxyPlayer().getGameProfile().getName(), this.server.getServerInfo().getName());
         }
 
-        this.player.getScheduledExecutor().schedule(this::tick, Config.IMP.CHECK_INTERVAL, TimeUnit.MILLISECONDS);
+        this.player.getScheduledExecutor().schedule(this::tick, CONFIG.checkInterval, TimeUnit.MILLISECONDS);
       } else {
         this.player.getScheduledExecutor().execute(() -> {
-          this.player.getProxyPlayer().resetTitle();
-          if (!Config.IMP.MESSAGES.CONNECTING.isEmpty()) {
-            this.player.getProxyPlayer().sendMessage(this.plugin.getConnectingMessage());
-          }
-
-          this.player.getScheduledExecutor().schedule(() -> this.player.disconnect(this.server), Config.IMP.JOIN_DELAY, TimeUnit.MILLISECONDS);
+          this.connecting = true;
+          this.titleIndex = -1;
+          this.player.getScheduledExecutor().schedule(() -> {
+            this.player.getProxyPlayer().resetTitle();
+            this.player.disconnect(this.server);
+          }, CONFIG.joinDelay, TimeUnit.MILLISECONDS);
         });
       }
     });
@@ -84,8 +90,14 @@ public class ReconnectHandler implements LimboSessionHandler {
       return;
     }
 
-    this.titleIndex = (this.titleIndex + 1) % this.plugin.getOfflineTitles().size();
-    this.player.getProxyPlayer().showTitle(this.plugin.getOfflineTitles().get(this.titleIndex));
-    this.player.getScheduledExecutor().schedule(this::tickMessages, Config.IMP.MESSAGES.TITLE_SETTINGS.SHOW_DELAY * 50, TimeUnit.MILLISECONDS);
+    if (this.connecting) {
+      this.titleIndex = (this.titleIndex + 1) % this.plugin.connectingTitles.size();
+      this.player.getProxyPlayer().showTitle(this.plugin.connectingTitles.get(this.titleIndex));
+    } else {
+      this.titleIndex = (this.titleIndex + 1) % this.plugin.offlineTitles.size();
+      this.player.getProxyPlayer().showTitle(this.plugin.offlineTitles.get(this.titleIndex));
+    }
+
+    this.player.getScheduledExecutor().schedule(this::tickMessages, CONFIG.messages.titles.showDelay * 50, TimeUnit.MILLISECONDS);
   }
 }

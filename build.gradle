@@ -7,7 +7,7 @@ plugins {
 }
 
 setGroup("net.elytrium")
-setVersion("1.1.1")
+setVersion("1.1.2")
 
 compileJava {
   getOptions().setEncoding("UTF-8")
@@ -37,6 +37,7 @@ dependencies {
   compileOnly("com.velocitypowered:velocity-api:$velocityVersion")
   compileOnly("com.velocitypowered:velocity-proxy:$velocityVersion")
   compileOnly("io.netty:netty-handler:$nettyVersion")
+  implementation("net.elytrium:serializer:$serializerVersion")
   annotationProcessor("com.velocitypowered:velocity-api:$velocityVersion")
 }
 
@@ -45,7 +46,6 @@ shadowJar {
 
   relocate("net.elytrium.commons.velocity", "net.elytrium.limboapi.thirdparty.commons.velocity")
   relocate("net.elytrium.commons.kyori", "net.elytrium.limboapi.thirdparty.commons.kyori")
-  relocate("net.elytrium.commons.config", "net.elytrium.limboapi.thirdparty.commons.config")
 }
 
 license {

@@ -17,10 +17,11 @@
 
 package net.elytrium.limboreconnect.listener;
 
+import static net.elytrium.limboreconnect.LimboReconnect.CONFIG;
+
 import com.velocitypowered.api.event.Subscribe;
 import java.util.Objects;
 import net.elytrium.limboapi.api.event.LoginLimboRegisterEvent;
-import net.elytrium.limboreconnect.Config;
 import net.elytrium.limboreconnect.LimboReconnect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
@@ -41,16 +42,23 @@ public class ReconnectListener {
   @Subscribe
   public void onLoginLimboRegister(LoginLimboRegisterEvent event) {
     event.setOnKickCallback(kickEvent -> {
-      Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
-      String kickMessage = Objects.requireNonNullElse(SERIALIZER.serialize(kickReason), "unknown");
-      if (Config.IMP.DEBUG) {
-        LimboReconnect.getLogger().info("Component: {}", kickReason);
-        LimboReconnect.getLogger().info("Kick message: {}", kickMessage);
-        LimboReconnect.getLogger().info("Config: {}", Config.IMP.RESTART_MESSAGE);
-        LimboReconnect.getLogger().info("Match: {}", kickMessage.matches(Config.IMP.RESTART_MESSAGE));
+      if (kickEvent.kickedDuringServerConnect()) {
+        return false;
       }
 
-      if (kickMessage.equals("") || kickMessage.matches(Config.IMP.RESTART_MESSAGE)) {
+      Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
+      String kickMessage = Objects.requireNonNullElse(SERIALIZER.serialize(kickReason), "unknown");
+      if (CONFIG.debug) {
+        LimboReconnect.getLogger().info("Component: {}", kickReason);
+        LimboReconnect.getLogger().info("Kick message: {}", kickMessage);
+        LimboReconnect.getLogger().info("Config: {}", CONFIG.triggerMessage);
+        LimboReconnect.getLogger().info("Match: {}", kickMessage.matches(CONFIG.triggerMessage));
+      }
+
+      if (kickMessage.matches(CONFIG.triggerMessage)) {
+        if (CONFIG.requirePermission && !kickEvent.getPlayer().hasPermission("limboreconnect.reconnect")) {
+          return false;
+        }
         this.plugin.addPlayer(kickEvent.getPlayer(), kickEvent.getServer());
         return true;
       } else {

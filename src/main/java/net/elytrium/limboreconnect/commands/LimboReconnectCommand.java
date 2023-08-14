@@ -17,6 +17,8 @@
 
 package net.elytrium.limboreconnect.commands;
 
+import static net.elytrium.limboreconnect.LimboReconnect.CONFIG;
+
 import com.google.common.collect.ImmutableList;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
@@ -25,7 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import net.elytrium.limboreconnect.Config;
 import net.elytrium.limboreconnect.LimboReconnect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -114,11 +115,13 @@ public class LimboReconnectCommand implements SimpleCommand {
   }
 
   private enum Subcommand {
-    RELOAD("Reload config.",
+    RELOAD(
+        "Reload config.",
         (LimboReconnectCommand parent, CommandSource source, String[] args) -> {
           parent.plugin.reload();
-          source.sendMessage(LimboReconnect.getSerializer().deserialize(Config.IMP.MESSAGES.RELOAD));
-        });
+          source.sendMessage(LimboReconnect.getSerializer().deserialize(CONFIG.messages.reload));
+        }
+    );
 
     private final String command;
     private final String description;

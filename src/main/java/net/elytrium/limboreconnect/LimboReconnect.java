@@ -57,16 +57,18 @@ import org.slf4j.Logger;
     authors = {"SkyWatcher_2019", "hevav"}
 )
 public class LimboReconnect {
+
+  public static final Config CONFIG = new Config();
   @Inject
   private static Logger LOGGER;
   private static ComponentSerializer<Component, Component, String> SERIALIZER;
+  public final List<Title> offlineTitles = new ArrayList<>();
+  public final List<Title> connectingTitles = new ArrayList<>();
   private final ProxyServer server;
   private final Path configPath;
   private final Path dataDirectory;
   private final LimboFactory factory;
-  private final List<Title> offlineTitles = new ArrayList<>();
   private Limbo limbo;
-  private Component connectingMessage;
 
   @Inject
   public LimboReconnect(Logger logger, ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -85,8 +87,20 @@ public class LimboReconnect {
     this.factory = (LimboFactory) this.server.getPluginManager().getPlugin("limboapi").flatMap(PluginContainer::getInstance).orElseThrow();
   }
 
+  public static ComponentSerializer<Component, Component, String> getSerializer() {
+    return SERIALIZER;
+  }
+
   private static void setSerializer(ComponentSerializer<Component, Component, String> serializer) {
     SERIALIZER = serializer;
+  }
+
+  public static Logger getLogger() {
+    return LOGGER;
+  }
+
+  private static void setLogger(Logger logger) {
+    LOGGER = logger;
   }
 
   @Subscribe
@@ -95,31 +109,44 @@ public class LimboReconnect {
   }
 
   public void reload() {
-    Config.IMP.reload(this.configPath);
+    CONFIG.reload(this.configPath);
 
-    setSerializer(Config.IMP.SERIALIZER.getSerializer());
+    setSerializer(CONFIG.serializer.getSerializer());
 
-    VirtualWorld world = this.factory.createVirtualWorld(Dimension.valueOf(Config.IMP.WORLD.DIMENSION), 0, 100, 0, (float) 90, (float) 0.0);
+    Config.World.PlayerCoords playerCoords = CONFIG.world.playerCoords;
 
-    if (Config.IMP.WORLD.LOAD_WORLD) {
+    VirtualWorld world = this.factory.createVirtualWorld(
+        Dimension.valueOf(CONFIG.world.dimension), playerCoords.x, playerCoords.y, playerCoords.z, playerCoords.yaw, playerCoords.pitch);
+
+    if (CONFIG.world.loadWorld) {
       try {
-        Path path = this.dataDirectory.resolve(Config.IMP.WORLD.WORLD_FILE_PATH);
-        WorldFile file = this.factory.openWorldFile(Config.IMP.WORLD.WORLD_FILE_TYPE, path);
+        Path path = this.dataDirectory.resolve(CONFIG.world.worldFilePath);
+        WorldFile file = this.factory.openWorldFile(CONFIG.world.worldFileType, path);
 
-        Config.WORLD.WORLD_COORDS coords = Config.IMP.WORLD.WORLD_COORDS;
-        file.toWorld(this.factory, world, coords.X, coords.Y, coords.Z, Config.IMP.WORLD.WORLD_LIGHT_LEVEL);
+        Config.World.WorldCoords coords = CONFIG.world.worldCoords;
+        file.toWorld(this.factory, world, coords.x, coords.y, coords.z, CONFIG.world.worldLightLevel);
       } catch (IOException e) {
         throw new IllegalArgumentException(e);
       }
     }
 
-    this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setShouldRejoin(Config.IMP.USE_LIMBO)
-        .setShouldRespawn(Config.IMP.USE_LIMBO).setGameMode(Config.IMP.WORLD.GAMEMODE);
+    this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setShouldRejoin(CONFIG.useLimbo)
+        .setShouldRespawn(CONFIG.useLimbo).setGameMode(CONFIG.world.gamemode);
 
     this.offlineTitles.clear();
-    Config.IMP.MESSAGES.TITLES.forEach(title -> this.offlineTitles.add(Title.title(
-        SERIALIZER.deserialize(title.TITLE),
-        SERIALIZER.deserialize(title.SUBTITLE),
+    CONFIG.messages.titles.titles.forEach(title -> this.offlineTitles.add(Title.title(
+        SERIALIZER.deserialize(title.title),
+        SERIALIZER.deserialize(title.subtitle),
+        Title.Times.times(
+            Duration.ofMillis(0),
+            Duration.ofMillis(1000 * 30),
+            Duration.ofMillis(0)
+        )
+    )));
+    this.connectingTitles.clear();
+    CONFIG.messages.titles.connectingTitles.forEach(title -> this.connectingTitles.add(Title.title(
+        SERIALIZER.deserialize(title.title),
+        SERIALIZER.deserialize(title.subtitle),
         Title.Times.times(
             Duration.ofMillis(0),
             Duration.ofMillis(1000 * 30),
@@ -127,7 +154,6 @@ public class LimboReconnect {
         )
     )));
 
-    this.connectingMessage = SERIALIZER.deserialize(Config.IMP.MESSAGES.CONNECTING);
 
     this.server.getEventManager().unregisterListeners(this);
     this.server.getEventManager().register(this, new ReconnectListener(this));
@@ -154,26 +180,5 @@ public class LimboReconnect {
 
     connectedPlayer.getTabList().clearAll();
     this.limbo.spawnPlayer(player, new ReconnectHandler(this, server));
-  }
-
-  public Component getConnectingMessage() {
-    return this.connectingMessage;
-  }
-
-  public List<Title> getOfflineTitles() {
-    return this.offlineTitles;
-  }
-
-  public static ComponentSerializer<Component, Component, String> getSerializer() {
-    return SERIALIZER;
-  }
-
-
-  public static Logger getLogger() {
-    return LOGGER;
-  }
-
-  private static void setLogger(Logger logger) {
-    LOGGER = logger;
   }
 }
