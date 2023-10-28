@@ -76,9 +76,9 @@ public class LimboReconnect {
     this.server = server;
 
     try {
-      Class.forName("com.velocitypowered.api.proxy.server.PingOptions");
+      MinecraftConnection.class.getDeclaredMethod("getActiveSessionHandler");
     } catch (Throwable throwable) {
-      throw new UnsupportedOperationException("You are using outdated velocity build! Please update velocity to build #224+");
+      throw new UnsupportedOperationException("You are using outdated Velocity! Please update Velocity to b266+");
     }
 
     this.dataDirectory = dataDirectory;
@@ -169,7 +169,7 @@ public class LimboReconnect {
   public void addPlayer(Player player, RegisteredServer server) {
     ConnectedPlayer connectedPlayer = (ConnectedPlayer) player;
     MinecraftConnection connection = connectedPlayer.getConnection();
-    MinecraftSessionHandler minecraftSessionHandler = connection.getSessionHandler();
+    MinecraftSessionHandler minecraftSessionHandler = connection.getActiveSessionHandler();
     if (minecraftSessionHandler != null) {
       if (minecraftSessionHandler instanceof ClientPlaySessionHandler) {
         ClientPlaySessionHandler sessionHandler = (ClientPlaySessionHandler) minecraftSessionHandler;
