@@ -30,7 +30,7 @@ import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.client.ClientPlaySessionHandler;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
-import com.velocitypowered.proxy.protocol.packet.BossBar;
+import com.velocitypowered.proxy.protocol.packet.BossBarPacket;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -174,9 +174,9 @@ public class LimboReconnect {
       if (minecraftSessionHandler instanceof ClientPlaySessionHandler) {
         ClientPlaySessionHandler sessionHandler = (ClientPlaySessionHandler) minecraftSessionHandler;
         for (UUID bossBar : sessionHandler.getServerBossBars()) {
-          BossBar deletePacket = new BossBar();
+          BossBarPacket deletePacket = new BossBarPacket();
           deletePacket.setUuid(bossBar);
-          deletePacket.setAction(BossBar.REMOVE);
+          deletePacket.setAction(BossBarPacket.REMOVE);
           connectedPlayer.getConnection().delayedWrite(deletePacket);
         }
         sessionHandler.getServerBossBars().clear();
