@@ -75,12 +75,6 @@ public class LimboReconnect {
     setLogger(logger);
     this.server = server;
 
-    try {
-      MinecraftConnection.class.getDeclaredMethod("getActiveSessionHandler");
-    } catch (Throwable throwable) {
-      throw new UnsupportedOperationException("You are using outdated Velocity! Please update Velocity to b266+");
-    }
-
     this.dataDirectory = dataDirectory;
     this.configPath = dataDirectory.resolve("config.yml");
 
@@ -171,9 +165,8 @@ public class LimboReconnect {
     MinecraftConnection connection = connectedPlayer.getConnection();
     MinecraftSessionHandler minecraftSessionHandler = connection.getActiveSessionHandler();
     if (minecraftSessionHandler != null) {
-      if (minecraftSessionHandler instanceof ClientPlaySessionHandler) {
-        ClientPlaySessionHandler sessionHandler = (ClientPlaySessionHandler) minecraftSessionHandler;
-        for (UUID bossBar : sessionHandler.getServerBossBars()) {
+      if (minecraftSessionHandler instanceof ClientPlaySessionHandler sessionHandler) {
+          for (UUID bossBar : sessionHandler.getServerBossBars()) {
           BossBarPacket deletePacket = new BossBarPacket();
           deletePacket.setUuid(bossBar);
           deletePacket.setAction(BossBarPacket.REMOVE);

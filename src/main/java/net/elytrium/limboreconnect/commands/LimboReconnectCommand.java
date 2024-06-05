@@ -34,7 +34,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 public class LimboReconnectCommand implements SimpleCommand {
 
   private static final List<Component> HELP_MESSAGE = List.of(Component.text("This server is using LimboReconnect and LimboAPI.", NamedTextColor.YELLOW),
-      Component.text("(C) 2022 - 2023 Elytrium", NamedTextColor.YELLOW), Component.text("https://elytrium.net/github/", NamedTextColor.GREEN),
+      Component.text("(C) 2022 - 2024 Elytrium", NamedTextColor.YELLOW), Component.text("https://elytrium.net/github/", NamedTextColor.GREEN),
       Component.empty()
   );
 
@@ -94,10 +94,9 @@ public class LimboReconnectCommand implements SimpleCommand {
   private void showHelp(CommandSource source) {
     HELP_MESSAGE.forEach(source::sendMessage);
 
-    List<Subcommand> availableSubcommands = Arrays.stream(Subcommand.values()).filter(command -> command.hasPermission(source))
-        .collect(Collectors.toList());
+    List<Subcommand> availableSubcommands = Arrays.stream(Subcommand.values()).filter(command -> command.hasPermission(source)).toList();
 
-    if (availableSubcommands.size() > 0) {
+    if (!availableSubcommands.isEmpty()) {
       source.sendMessage(AVAILABLE_SUBCOMMANDS_MESSAGE);
       availableSubcommands.forEach(command -> source.sendMessage(command.getMessageLine()));
     } else {

@@ -139,9 +139,6 @@ public class Config extends YamlSerializable {
       public String title;
       public String subtitle = "Please wait...";
 
-      public Title() {
-      }
-
       public Title(String title) {
         this.title = title;
       }

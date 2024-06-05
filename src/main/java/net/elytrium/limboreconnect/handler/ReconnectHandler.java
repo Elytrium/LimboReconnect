@@ -30,6 +30,7 @@ import net.elytrium.limboreconnect.LimboReconnect;
 
 public class ReconnectHandler implements LimboSessionHandler {
 
+  private final PingOptions pingOptions = PingOptions.builder().timeout(Duration.ofMillis(CONFIG.pingTimeout)).build();
   private final LimboReconnect plugin;
   private final RegisteredServer server;
   private LimboPlayer player;
@@ -61,10 +62,7 @@ public class ReconnectHandler implements LimboSessionHandler {
       return;
     }
 
-    PingOptions.Builder options = PingOptions.builder();
-    options.timeout(Duration.ofMillis(CONFIG.pingTimeout));
-
-    this.server.ping(options.build()).whenComplete((ping, exception) -> {
+    this.server.ping(this.pingOptions).whenComplete((ping, exception) -> {
       if (exception != null) {
         if (CONFIG.debug) {
           LimboReconnect.getLogger()
