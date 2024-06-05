@@ -166,7 +166,7 @@ public class LimboReconnect {
     MinecraftSessionHandler minecraftSessionHandler = connection.getActiveSessionHandler();
     if (minecraftSessionHandler != null) {
       if (minecraftSessionHandler instanceof ClientPlaySessionHandler sessionHandler) {
-          for (UUID bossBar : sessionHandler.getServerBossBars()) {
+        for (UUID bossBar : sessionHandler.getServerBossBars()) {
           BossBarPacket deletePacket = new BossBarPacket();
           deletePacket.setUuid(bossBar);
           deletePacket.setAction(BossBarPacket.REMOVE);
