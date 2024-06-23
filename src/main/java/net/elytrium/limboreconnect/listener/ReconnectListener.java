@@ -48,14 +48,15 @@ public class ReconnectListener {
 
       Component kickReason = kickEvent.getServerKickReason().isPresent() ? kickEvent.getServerKickReason().get() : Component.empty();
       String kickMessage = Objects.requireNonNullElse(SERIALIZER.serialize(kickReason), "unknown");
+      boolean match = this.plugin.triggerMessage.matcher(kickMessage).matches();
       if (CONFIG.debug) {
         LimboReconnect.getLogger().info("Component: {}", kickReason);
         LimboReconnect.getLogger().info("Kick message: {}", kickMessage);
         LimboReconnect.getLogger().info("Config: {}", CONFIG.triggerMessage);
-        LimboReconnect.getLogger().info("Match: {}", kickMessage.matches(CONFIG.triggerMessage));
+        LimboReconnect.getLogger().info("Match: {}", match);
       }
 
-      if (kickMessage.matches(CONFIG.triggerMessage)) {
+      if (match) {
         if (CONFIG.requirePermission && !kickEvent.getPlayer().hasPermission("limboreconnect.reconnect")) {
           return false;
         }

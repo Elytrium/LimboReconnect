@@ -37,6 +37,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
@@ -64,6 +66,7 @@ public class LimboReconnect {
   private static ComponentSerializer<Component, Component, String> SERIALIZER;
   public final List<Title> offlineTitles = new ArrayList<>();
   public final List<Title> connectingTitles = new ArrayList<>();
+  public Pattern triggerMessage;
   private final ProxyServer server;
   private final Path configPath;
   private final Path dataDirectory;
@@ -116,6 +119,12 @@ public class LimboReconnect {
 
     VirtualWorld world = this.factory.createVirtualWorld(
         Dimension.valueOf(CONFIG.world.dimension), playerCoords.x, playerCoords.y, playerCoords.z, playerCoords.yaw, playerCoords.pitch);
+
+    try {
+      this.triggerMessage = Pattern.compile(CONFIG.triggerMessage);
+    } catch (PatternSyntaxException e) {
+      throw new IllegalArgumentException("Unable to parse 'triggerMessage'  into a valid RegEx, check config: " + CONFIG.triggerMessage, e);
+    }
 
     if (CONFIG.world.loadWorld) {
       try {
