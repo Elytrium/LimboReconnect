@@ -18,8 +18,11 @@
 package net.elytrium.limboreconnect;
 
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
@@ -44,9 +47,12 @@ import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
 import net.elytrium.limboapi.api.chunk.VirtualWorld;
 import net.elytrium.limboapi.api.file.WorldFile;
+import net.elytrium.limboapi.api.protocol.PacketDirection;
+import net.elytrium.limboapi.api.protocol.packets.PacketMapping;
 import net.elytrium.limboreconnect.commands.LimboReconnectCommand;
 import net.elytrium.limboreconnect.handler.ReconnectHandler;
 import net.elytrium.limboreconnect.listener.ReconnectListener;
+import net.elytrium.limboreconnect.protocol.packets.PlaySound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
 import net.kyori.adventure.title.Title;
@@ -71,12 +77,14 @@ public class LimboReconnect {
   private final Path configPath;
   private final Path dataDirectory;
   private final LimboFactory factory;
+  private final CommandMeta commandMeta;
   private Limbo limbo;
 
   @Inject
   public LimboReconnect(Logger logger, ProxyServer server, @DataDirectory Path dataDirectory) {
     setLogger(logger);
     this.server = server;
+    this.commandMeta = server.getCommandManager().metaBuilder("limboreconnect").plugin(this).build();
 
     this.dataDirectory = dataDirectory;
     this.configPath = dataDirectory.resolve("config.yml");
@@ -138,8 +146,27 @@ public class LimboReconnect {
       }
     }
 
-    this.limbo = this.factory.createLimbo(world).setName("LimboReconnect").setShouldRejoin(CONFIG.useLimbo)
-        .setShouldRespawn(CONFIG.useLimbo).setGameMode(CONFIG.world.gamemode);
+    this.limbo = this.factory.createLimbo(world)
+        .setName("LimboReconnect")
+        .setShouldRejoin(CONFIG.useLimbo)
+        .setShouldRespawn(CONFIG.useLimbo)
+        .setGameMode(CONFIG.world.gamemode)
+        .registerPacket(PacketDirection.CLIENTBOUND, PlaySound.class, PlaySound::new, new PacketMapping[] {
+            new PacketMapping(0x29, ProtocolVersion.MINECRAFT_1_7_2, true),
+            new PacketMapping(0x19, ProtocolVersion.MINECRAFT_1_9, true),
+            new PacketMapping(0x1a, ProtocolVersion.MINECRAFT_1_13, true),
+            new PacketMapping(0x19, ProtocolVersion.MINECRAFT_1_14, true),
+            new PacketMapping(0x1a, ProtocolVersion.MINECRAFT_1_15, true),
+            new PacketMapping(0x19, ProtocolVersion.MINECRAFT_1_16, true),
+            new PacketMapping(0x18, ProtocolVersion.MINECRAFT_1_16_2, true),
+            new PacketMapping(0x19, ProtocolVersion.MINECRAFT_1_17, true),
+            new PacketMapping(0x16, ProtocolVersion.MINECRAFT_1_19, true),
+            new PacketMapping(0x17, ProtocolVersion.MINECRAFT_1_19_1, true),
+            new PacketMapping(0x5e, ProtocolVersion.MINECRAFT_1_19_3, true),
+            new PacketMapping(0x62, ProtocolVersion.MINECRAFT_1_19_4, true),
+            new PacketMapping(0x64, ProtocolVersion.MINECRAFT_1_20_2, true),
+            new PacketMapping(0x68, ProtocolVersion.MINECRAFT_1_21, true),
+            });
 
     this.offlineTitles.clear();
     CONFIG.messages.titles.titles.forEach(title -> this.offlineTitles.add(Title.title(
@@ -165,8 +192,9 @@ public class LimboReconnect {
 
     this.server.getEventManager().unregisterListeners(this);
     this.server.getEventManager().register(this, new ReconnectListener(this));
-    this.server.getCommandManager().unregister("limboreconnect");
-    this.server.getCommandManager().register("limboreconnect", new LimboReconnectCommand(this));
+    CommandManager commandManager = this.server.getCommandManager();
+    commandManager.unregister("limboreconnect");
+    commandManager.register(this.commandMeta, new LimboReconnectCommand(this));
   }
 
   public void addPlayer(Player player, RegisteredServer server) {

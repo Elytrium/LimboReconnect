@@ -58,6 +58,7 @@ public class Config extends YamlSerializable {
 
   public World world;
   public Messages messages;
+  public Sounds sounds;
   public boolean debug = false;
 
 
@@ -65,6 +66,7 @@ public class Config extends YamlSerializable {
     super(Config.CONFIG);
     this.world = new World();
     this.messages = new Messages();
+    this.sounds = new Sounds();
   }
 
 
@@ -144,6 +146,26 @@ public class Config extends YamlSerializable {
 
       public Title(String title) {
         this.title = title;
+      }
+    }
+  }
+
+  public static class Sounds {
+
+    public Sound waiting = new Sound("entity.experience_orb.pickup");
+    public Sound connecting = new Sound("entity.player.levelup");
+
+    public static class Sound {
+
+      public String name;
+      public float volume = 1.0f;
+      public float pitch = 1.0f;
+
+      public Sound() {
+      }
+
+      public Sound(String name) {
+        this.name = name;
       }
     }
   }

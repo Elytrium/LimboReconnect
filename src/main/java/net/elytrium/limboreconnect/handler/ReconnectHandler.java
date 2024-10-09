@@ -26,7 +26,9 @@ import java.util.concurrent.TimeUnit;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboSessionHandler;
 import net.elytrium.limboapi.api.player.LimboPlayer;
+import net.elytrium.limboreconnect.Config;
 import net.elytrium.limboreconnect.LimboReconnect;
+import net.elytrium.limboreconnect.protocol.packets.PlaySound;
 
 public class ReconnectHandler implements LimboSessionHandler {
 
@@ -37,10 +39,18 @@ public class ReconnectHandler implements LimboSessionHandler {
   private boolean connected = true;
   private boolean connecting = false;
   private int titleIndex = -1;
+  private final PlaySound waitSound;
+  private final PlaySound connectSound;
 
   public ReconnectHandler(LimboReconnect plugin, RegisteredServer server) {
     this.plugin = plugin;
     this.server = server;
+    Config.Sounds sounds = CONFIG.sounds;
+    double playerX = CONFIG.world.playerCoords.x;
+    double playerY = CONFIG.world.playerCoords.y;
+    double playerZ = CONFIG.world.playerCoords.z;
+    this.waitSound = new PlaySound(sounds.waiting.name, playerX, playerY, playerZ, sounds.waiting.volume, sounds.waiting.pitch);
+    this.connectSound = new PlaySound(sounds.connecting.name, playerX, playerY, playerZ, sounds.connecting.volume, sounds.connecting.pitch);
   }
 
   @Override
@@ -55,6 +65,12 @@ public class ReconnectHandler implements LimboSessionHandler {
   @Override
   public void onDisconnect() {
     this.connected = false;
+  }
+
+  @Override
+  public void onMove(double x, double y, double z) {
+    this.waitSound.setPosition(x, y, z);
+    this.connectSound.setPosition(x, y, z);
   }
 
   private void tick() {
@@ -75,6 +91,7 @@ public class ReconnectHandler implements LimboSessionHandler {
           this.connecting = true;
           this.titleIndex = -1;
           this.player.getScheduledExecutor().schedule(() -> {
+            this.player.writePacket(this.connectSound);
             this.player.getProxyPlayer().resetTitle();
             this.player.disconnect(this.server);
           }, CONFIG.joinDelay, TimeUnit.MILLISECONDS);
@@ -95,7 +112,7 @@ public class ReconnectHandler implements LimboSessionHandler {
       this.titleIndex = (this.titleIndex + 1) % this.plugin.offlineTitles.size();
       this.player.getProxyPlayer().showTitle(this.plugin.offlineTitles.get(this.titleIndex));
     }
-
+    this.player.writePacket(this.waitSound);
     this.player.getScheduledExecutor().schedule(this::tickMessages, CONFIG.messages.titles.showDelay * 50, TimeUnit.MILLISECONDS);
   }
 }
