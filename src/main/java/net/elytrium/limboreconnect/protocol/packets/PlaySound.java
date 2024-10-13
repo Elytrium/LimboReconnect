@@ -50,11 +50,11 @@ public class PlaySound implements MinecraftPacket {
 
   @Override
   public void encode(ByteBuf byteBuf, ProtocolUtils.Direction direction, ProtocolVersion protocolVersion) {
-    if (protocolVersion.greaterThan(ProtocolVersion.MINECRAFT_1_19_1) && protocolVersion.lessThan(ProtocolVersion.MINECRAFT_1_18_2)) {
+    if (protocolVersion.greaterThan(ProtocolVersion.MINECRAFT_1_19_1) || protocolVersion.lessThan(ProtocolVersion.MINECRAFT_1_18_2)) {
       ProtocolUtils.writeVarInt(byteBuf, 0);
     }
     ProtocolUtils.writeString(byteBuf, this.soundName);
-    if (protocolVersion.greaterThan(ProtocolVersion.MINECRAFT_1_19_1) && protocolVersion.lessThan(ProtocolVersion.MINECRAFT_1_18_2)) {
+    if (protocolVersion.greaterThan(ProtocolVersion.MINECRAFT_1_19_1) || protocolVersion.lessThan(ProtocolVersion.MINECRAFT_1_18_2)) {
       byteBuf.writeBoolean(false);
     }
     ProtocolUtils.writeVarInt(byteBuf, 0);
