@@ -50,20 +50,26 @@ public class PlaySound implements MinecraftPacket {
 
   @Override
   public void encode(ByteBuf byteBuf, ProtocolUtils.Direction direction, ProtocolVersion protocolVersion) {
-    if (protocolVersion.greaterThan(ProtocolVersion.MINECRAFT_1_19_1) || protocolVersion.lessThan(ProtocolVersion.MINECRAFT_1_18_2)) {
+    if (protocolVersion.noLessThan(ProtocolVersion.MINECRAFT_1_19_3)) {
+      ProtocolUtils.writeVarInt(byteBuf, 0);
+      ProtocolUtils.writeString(byteBuf, this.soundName);
+      byteBuf.writeBoolean(false);
+    } else {
+      ProtocolUtils.writeString(byteBuf, this.soundName);
+    }
+    if (protocolVersion.noLessThan(ProtocolVersion.MINECRAFT_1_9)) {
       ProtocolUtils.writeVarInt(byteBuf, 0);
     }
-    ProtocolUtils.writeString(byteBuf, this.soundName);
-    if (protocolVersion.greaterThan(ProtocolVersion.MINECRAFT_1_19_1) || protocolVersion.lessThan(ProtocolVersion.MINECRAFT_1_18_2)) {
-      byteBuf.writeBoolean(false);
-    }
-    ProtocolUtils.writeVarInt(byteBuf, 0);
     byteBuf.writeInt(this.playerX);
     byteBuf.writeInt(this.playerY);
     byteBuf.writeInt(this.playerZ);
     byteBuf.writeFloat(this.volume);
-    byteBuf.writeFloat(this.pitch);
-    if (protocolVersion.greaterThan(ProtocolVersion.MINECRAFT_1_18_2)) {
+    if (protocolVersion.noLessThan(ProtocolVersion.MINECRAFT_1_10)) {
+      byteBuf.writeFloat(this.pitch);
+    } else {
+      byteBuf.writeByte((int) (this.pitch * 63.5F));
+    }
+    if (protocolVersion.noLessThan(ProtocolVersion.MINECRAFT_1_19)) {
       byteBuf.writeLong(0);
     }
   }
