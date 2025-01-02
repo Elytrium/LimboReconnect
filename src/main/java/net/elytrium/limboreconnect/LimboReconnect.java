@@ -168,6 +168,7 @@ public class LimboReconnect {
             new PacketMapping(0x66, ProtocolVersion.MINECRAFT_1_20_3, true),
             new PacketMapping(0x68, ProtocolVersion.MINECRAFT_1_20_5, true),
             new PacketMapping(0x6f, ProtocolVersion.MINECRAFT_1_21_2, true),
+            new PacketMapping(0x6F, ProtocolVersion.MINECRAFT_1_21_4, true),
             });
 
     this.offlineTitles.clear();
