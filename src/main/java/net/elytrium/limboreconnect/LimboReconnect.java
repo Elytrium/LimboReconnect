@@ -151,7 +151,7 @@ public class LimboReconnect {
         .setShouldRejoin(CONFIG.useLimbo)
         .setShouldRespawn(CONFIG.useLimbo)
         .setGameMode(CONFIG.world.gamemode)
-        .registerPacket(PacketDirection.CLIENTBOUND, PlaySound.class, PlaySound::new, new PacketMapping[] {
+        .registerPacket(PacketDirection.CLIENTBOUND, PlaySound.class, null, new PacketMapping[] {
             new PacketMapping(0x29, ProtocolVersion.MINECRAFT_1_7_2, true),
             new PacketMapping(0x19, ProtocolVersion.MINECRAFT_1_9, true),
             new PacketMapping(0x1a, ProtocolVersion.MINECRAFT_1_13, true),
@@ -168,6 +168,7 @@ public class LimboReconnect {
             new PacketMapping(0x66, ProtocolVersion.MINECRAFT_1_20_3, true),
             new PacketMapping(0x68, ProtocolVersion.MINECRAFT_1_20_5, true),
             new PacketMapping(0x6f, ProtocolVersion.MINECRAFT_1_21_2, true),
+            new PacketMapping(0x6e, ProtocolVersion.MINECRAFT_1_21_5, true),
             });
 
     this.offlineTitles.clear();

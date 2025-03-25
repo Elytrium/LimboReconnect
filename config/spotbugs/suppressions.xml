@@ -20,4 +20,7 @@
     <Match>
         <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_THROWABLE"/>
     </Match>
+    <Match>
+        <Bug pattern="PA_PUBLIC_PRIMITIVE_ATTRIBUTE"/>
+    </Match>
 </FindBugsFilter>
