@@ -22,7 +22,7 @@ jobs:
       - name: Build LimboReconnect
         run: ./gradlew build
       - name: Upload LimboReconnect
-        uses: actions/upload-artifact@v3.0.0
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: LimboReconnect
           path: "build/libs/LimboReconnect*.jar"
