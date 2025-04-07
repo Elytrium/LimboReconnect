@@ -39,10 +39,6 @@ public class PlaySound implements MinecraftPacket {
     this.pitch = pitch;
   }
 
-  public PlaySound() {
-    throw new IllegalStateException();
-  }
-
   @Override
   public void decode(ByteBuf byteBuf, ProtocolUtils.Direction direction, ProtocolVersion protocolVersion) {
     throw new IllegalStateException();
