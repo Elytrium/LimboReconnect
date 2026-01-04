@@ -17,7 +17,8 @@ public class ConnectListener {
 
     @Subscribe
     public void onServerPreConnect(ServerPostConnectEvent event) {
-        plugin.addPlayer(event.getPlayer(), null);
+        event.getPlayer().getCurrentServer().ifPresent(serverConnection ->
+                plugin.addPlayer(event.getPlayer(), serverConnection.getServer()));
     }
 
 }
