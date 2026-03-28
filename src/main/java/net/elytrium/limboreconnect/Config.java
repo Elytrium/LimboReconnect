@@ -53,12 +53,16 @@ public class Config extends YamlSerializable {
   public long joinDelay = 2000;
   @Comment(value = @CommentValue("Send to limbo or use current server's world"))
   public boolean useLimbo = false;
+  @Comment(value = @CommentValue("Connects to Limbo instantly after connecting to the main server"))
+  public boolean testing = false;
   @Comment(value = @CommentValue("Require permission to reconnect (limboreconnect.reconnect)"))
   public boolean requirePermission = false;
 
   public World world;
   public Messages messages;
   public Sounds sounds;
+  @Comment(value = @CommentValue("Allows you to transfer a player to the hub if the server is unavailable."))
+  public HubTeleport hubTeleport;
   public boolean debug = false;
 
 
@@ -67,6 +71,7 @@ public class Config extends YamlSerializable {
     this.world = new World();
     this.messages = new Messages();
     this.sounds = new Sounds();
+    this.hubTeleport = new HubTeleport();
   }
 
 
@@ -103,9 +108,9 @@ public class Config extends YamlSerializable {
 
     public static class PlayerCoords {
 
-      public int x = 0;
-      public int y = 100;
-      public int z = 0;
+      public double x = 0;
+      public double y = 100;
+      public double z = 0;
       public float pitch = 0;
       public float yaw = 90;
 
@@ -169,4 +174,38 @@ public class Config extends YamlSerializable {
       }
     }
   }
+
+  public static class HubTeleport {
+
+    public boolean enable = false;
+    @Comment(value = @CommentValue("sends the player to an available hub"), at = Comment.At.SAME_LINE)
+    public boolean instantly = false;
+    public List<String> servers = List.of("hub-1", "hub-2", "hub-3");
+    public Messages messages = new Messages();
+
+    public static class Messages {
+
+      public String teleport = """
+              >
+                    <gray>━━━━━━━━━━━━━━━━━━━━</gray>
+                    <newline>
+                    <yellow><bold>The server you were on is currently unavailable</bold></yellow>
+                    <newline>
+                    <gray>You may wait here or teleport to the hub</gray>
+                    <newline>
+                    <click:run_command:/hub>
+                      <hover:show_text:"<yellow>Click to teleport to the hub">
+                        <gradient:#FFD700:#FF8C00><bold>▶ CLICK HERE TO GO TO HUB ◀</bold></gradient>
+                      </hover>
+                    </click>
+                    <newline>
+                    <gray>━━━━━━━━━━━━━━━━━━━━</gray>""";
+      public String fully = "<red>All hubs are currently full, please wait...";
+
+      public Messages() {}
+
+    }
+
+  }
+
 }

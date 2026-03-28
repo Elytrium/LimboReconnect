@@ -34,14 +34,6 @@ import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.client.ClientPlaySessionHandler;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.packet.BossBarPacket;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
@@ -51,12 +43,22 @@ import net.elytrium.limboapi.api.protocol.PacketDirection;
 import net.elytrium.limboapi.api.protocol.packets.PacketMapping;
 import net.elytrium.limboreconnect.commands.LimboReconnectCommand;
 import net.elytrium.limboreconnect.handler.ReconnectHandler;
+import net.elytrium.limboreconnect.listener.ConnectListener;
 import net.elytrium.limboreconnect.listener.ReconnectListener;
 import net.elytrium.limboreconnect.protocol.packets.PlaySound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
 import net.kyori.adventure.title.Title;
 import org.slf4j.Logger;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 @Plugin(
     id = "limboreconnect",
@@ -197,9 +199,11 @@ public class LimboReconnect {
 
     this.server.getEventManager().unregisterListeners(this);
     this.server.getEventManager().register(this, new ReconnectListener(this));
+    if(CONFIG.testing) this.server.getEventManager().register(this, new ConnectListener(server, this));
     CommandManager commandManager = this.server.getCommandManager();
     commandManager.unregister("limboreconnect");
     commandManager.register(this.commandMeta, new LimboReconnectCommand(this));
+
   }
 
   public void addPlayer(Player player, RegisteredServer server) {
@@ -219,6 +223,7 @@ public class LimboReconnect {
     }
 
     connectedPlayer.getTabList().clearAll();
-    this.limbo.spawnPlayer(player, new ReconnectHandler(this, server));
+    this.limbo.spawnPlayer(player, new ReconnectHandler(this, server, this.server));
   }
+
 }

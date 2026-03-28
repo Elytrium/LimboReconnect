@@ -17,12 +17,9 @@
 
 package net.elytrium.limboreconnect.handler;
 
-import static net.elytrium.limboreconnect.LimboReconnect.CONFIG;
-
+import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.PingOptions;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboSessionHandler;
 import net.elytrium.limboapi.api.player.LimboPlayer;
@@ -30,21 +27,30 @@ import net.elytrium.limboreconnect.Config;
 import net.elytrium.limboreconnect.LimboReconnect;
 import net.elytrium.limboreconnect.protocol.packets.PlaySound;
 
+import java.time.Duration;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import static net.elytrium.limboreconnect.LimboReconnect.CONFIG;
+
 public class ReconnectHandler implements LimboSessionHandler {
 
   private final PingOptions pingOptions = PingOptions.builder().timeout(Duration.ofMillis(CONFIG.pingTimeout)).build();
   private final LimboReconnect plugin;
   private final RegisteredServer server;
+  private final ProxyServer proxyServer;
   private LimboPlayer player;
   private boolean connected = true;
   private boolean connecting = false;
   private int titleIndex = -1;
   private final PlaySound waitSound;
   private final PlaySound connectSound;
+  private ScheduledFuture<?> hubRetryTask;
 
-  public ReconnectHandler(LimboReconnect plugin, RegisteredServer server) {
+  public ReconnectHandler(LimboReconnect plugin, RegisteredServer server, ProxyServer proxyServer) {
     this.plugin = plugin;
     this.server = server;
+    this.proxyServer =  proxyServer;
     Config.Sounds sounds = CONFIG.sounds;
     double playerX = CONFIG.world.playerCoords.x;
     double playerY = CONFIG.world.playerCoords.y;
@@ -60,6 +66,7 @@ public class ReconnectHandler implements LimboSessionHandler {
     this.player.setGameMode(CONFIG.world.gamemode);
     this.player.getScheduledExecutor().schedule(this::tick, CONFIG.checkInterval, TimeUnit.MILLISECONDS);
     this.tickMessages();
+    this.hubTeleport();
   }
 
   @Override
@@ -73,10 +80,14 @@ public class ReconnectHandler implements LimboSessionHandler {
     this.connectSound.setPosition(x, y, z);
   }
 
+  @Override
+  public void onChat(String chat) {
+    if (!connected || connecting) return;
+    if ("/hub".equalsIgnoreCase(chat)) findAndSendHub();
+  }
+
   private void tick() {
-    if (!this.connected) {
-      return;
-    }
+    if (!this.connected || CONFIG.testing) return;
 
     this.server.ping(this.pingOptions).whenComplete((ping, exception) -> {
       if (exception != null) {
@@ -115,4 +126,61 @@ public class ReconnectHandler implements LimboSessionHandler {
     this.player.writePacket(this.waitSound);
     this.player.getScheduledExecutor().schedule(this::tickMessages, CONFIG.messages.titles.showDelay * 50, TimeUnit.MILLISECONDS);
   }
+
+  private void hubTeleport() {
+    if (!connected || connecting || !CONFIG.hubTeleport.enable) return;
+
+    boolean fromHub = CONFIG.hubTeleport.servers
+            .contains(server.getServerInfo().getName());
+
+    if (fromHub && CONFIG.hubTeleport.servers.size() == 1) return;
+
+    if (CONFIG.hubTeleport.instantly) findAndSendHub();
+    else player.getProxyPlayer().sendMessage(LimboReconnect.getSerializer().deserialize(CONFIG.hubTeleport.messages.teleport));
+  }
+
+  private void findAndSendHub() {
+    if (!connected || connecting || !CONFIG.hubTeleport.enable) return;
+    if (hubRetryTask != null && !hubRetryTask.isDone()) return;
+
+    proxyServer.getAllServers().stream()
+            .filter(s -> CONFIG.hubTeleport.servers.contains(s.getServerInfo().getName()))
+            .forEach(s -> s.ping(pingOptions).whenComplete((ping, err) -> {
+              if (!connected || connecting) return;
+              if (err != null || ping == null) return;
+
+              ping.getPlayers().ifPresent(players -> {
+                if (players.getOnline() >= players.getMax()) return;
+                connect(s);
+              });
+            }));
+
+    hubRetryTask = player.getScheduledExecutor().schedule(
+            () -> {
+              if (!connected || connecting) return;
+              player.getProxyPlayer().sendMessage(LimboReconnect.getSerializer().deserialize(CONFIG.hubTeleport.messages.fully));
+              hubRetryTask = null;
+              findAndSendHub();
+            }, 2, TimeUnit.SECONDS
+    );
+  }
+
+  private void connect(RegisteredServer target) {
+    if (!connected || connecting) return;
+
+    connecting = true;
+    cancelHubRetry();
+
+    player.writePacket(connectSound);
+    player.getProxyPlayer().resetTitle();
+    player.disconnect(target);
+  }
+
+  private void cancelHubRetry() {
+    if (hubRetryTask != null) {
+      hubRetryTask.cancel(false);
+      hubRetryTask = null;
+    }
+  }
+
 }
