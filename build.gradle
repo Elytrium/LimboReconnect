@@ -6,7 +6,7 @@ plugins {
   id("com.gradleup.shadow").version("9.4.0")
 }
 
-setGroup("net.elytrium")  
+setGroup("net.elytrium")
 setVersion("1.1.7")
 
 compileJava {
@@ -14,8 +14,8 @@ compileJava {
 }
 
 java {
-  setSourceCompatibility(JavaVersion.VERSION_21)
-  setTargetCompatibility(JavaVersion.VERSION_21)
+  setSourceCompatibility(JavaVersion.VERSION_25)
+  setTargetCompatibility(JavaVersion.VERSION_25)
 }
 
 repositories {
